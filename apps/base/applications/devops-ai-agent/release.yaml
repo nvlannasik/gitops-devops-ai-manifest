@@ -1,0 +1,55 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: devops-ai-agent
+  namespace: flux-app
+spec:
+  targetNamespace: devop-tools
+  chart:
+    spec:
+      chart: main
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: ecr
+        namespace: flux-system
+  interval: 1m
+  install:
+    remediation:
+      retries: 3
+  values:
+    nameOverride: devops-ai-agent
+    fullnameOverride: devops-ai-agent
+    commonLabels:
+      app: devops-ai-agent
+    image:
+      repository: nvlannasik/devops-ai-agent
+      registry: docker.io
+    containerPorts:
+      - name: main
+        containerPort: 3000
+    service:
+      ports:
+        - name: http
+          port: 3000
+          protocol: TCP
+          targetPort: 3000
+    kubeVersion: "1.33.0"
+    commonAnnotations:
+      configmap.reloader.stakater.com/reload: devops-ai-agent-external-secret
+      secret.reloader.stakater.com/reload: devops-ai-agent-external-secret
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 256m
+        memory: 512Mi
+      requests:
+        cpu: 128m
+        memory: 256Mi
+    externalSecret:
+      enabled: false
+    serviceAccount:
+      create: true
+      name: "devops-ai-agent"
+      automountServiceAccountToken: true

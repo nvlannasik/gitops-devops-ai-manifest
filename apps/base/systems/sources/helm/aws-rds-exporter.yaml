@@ -1,0 +1,8 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: aws-rds-exporter
+spec:
+  interval: 30m
+  url: oci://public.ecr.aws/qonto
+  type: oci

@@ -1,0 +1,98 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: devops-ai-agent
+  namespace: flux-app
+spec:
+  chart:
+    spec:
+      version: 1.0.0
+  values:
+    image:
+      tag: latest
+    extraEnvVarsSecret: {}
+    extraEnvVars:
+      - name: NODE_ENV
+        value: "dev"
+      - name: PORT
+        value: "3000"
+      - name: LLM_PROVIDER
+        value: "private-llm"
+      - name: MCP_TRANSPORT
+        value: "http"
+      - name: MCP_HTTP_URL
+        value: "http://devops-mcp-server.devops-tools/mcp"
+      - name: SQS_REQUEST_QUEUE_NAME
+        value: "llm-request.fifo"
+      - name: SQS_RESPONSE_QUEUE_NAME
+        value: "llm-response.fifo"
+      - name: SQS_REQUEST_DLQ_NAME
+        value: "llm-request-dlq.fifo"
+      - name: SQS_POLL_WAIT_SECONDS
+        value: "20"
+      - name: SQS_LLM_TIMEOUT_MS
+        value: "60000"
+      - name: MEMORY_BACKEND
+        value: "redis"
+      - name: REDIS_HOST
+        value: "devops-agent-redis.devops-tools"
+      - name: REDIS_PORT
+        value: "6379"
+      - name: REDIS_DB
+        value: "0"
+      - name: REDIS_TLS
+        value: "false"
+      - name: MAX_CONCURRENT_INVESTIGATIONS
+        value: "5"
+      - name: SLACK_ALERT_CHANNEL
+        value: "C09R0F6F891"
+      - name: SLACK_ONCALL_USERS
+        value: "U03RCHDHUH5"
+      - name: SLACK_BOT_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: devops-ai-agent-external-secret
+            key: SLACK_BOT_TOKEN
+      - name: SLACK_SIGNING_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: devops-ai-agent-external-secret
+            key: SLACK_SIGNING_SECRET
+      - name: SLACK_APP_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: devops-ai-agent-external-secret
+            key: SLACK_APP_TOKEN
+      - name: REDIS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: devops-ai-agent-external-secret
+            key: REDIS_PASSWORD
+    secret:
+      enabled: false
+    replicaCount: 1
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    loggingOperator:
+      enabled: false
+    secretStore:
+      enabled: true
+      provider:
+        aws:
+          service: SecretsManager
+          region: ap-southeast-1
+          auth:
+            jwt:
+              serviceAccountRef:
+                name: "devops-ai-agent"
+    resources:
+      limits:
+        cpu: 50m
+        memory: 150Mi
+      requests:
+        cpu: 10m
+        memory: 50Mi
+

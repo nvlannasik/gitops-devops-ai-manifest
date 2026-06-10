@@ -1,0 +1,98 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: prometheus
+  namespace: flux-system
+spec:
+  targetNamespace: monitoring
+  chart:
+    spec:
+      chart: prometheus
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus
+      version: "27.22.0"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    server:
+      enabled: true
+      image:
+        repository: quay.io/prometheus/prometheus
+        tag: "v3.4.1"
+      persistentVolume:
+        enabled: false
+      alertmanagers:
+        - scheme: http
+          static_configs:
+            - targets:
+                - alertmanager.monitoring.svc.cluster.local:9093
+      replicaCount: 1
+      statefulSet:
+        enabled: false
+    configmapReload:
+      enabled: true
+      image:
+        repository: quay.io/prometheus-operator/prometheus-config-reloader
+        tag: v0.83.0
+    serverFiles:
+      prometheus.yml:
+        rule_files:
+          - /etc/config/alerting_rules.yml
+      alerting_rules.yml:
+        groups:
+          - name: job
+            rules:
+              - alert: KubernetesPodNotHealthy
+                expr: sum by (namespace, pod, cluster_name) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
+                for: 10m
+                labels:
+                  severity: critical
+                  pod: "{{ $labels.pod }}"
+                  cluster_name: "{{ $labels.cluster_name }}"
+                  namespace: "{{ $labels.namespace }}"
+                annotations:
+                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `{{ $labels.cluster_name }}`"
+                  description: "Not feeling so well! Pod `{{ $labels.pod }}` has health issues. Time for a check-up! :pepe_susq:"
+              - alert: KubernetesPodCrashLooping
+                expr: increase(kube_pod_container_status_restarts_total[5m]) > 1
+                for: 2m
+                labels:
+                  severity: critical
+                  pod: "{{ $labels.pod }}"
+                  cluster_name: "{{ $labels.cluster_name }}"
+                  namespace: "{{ $labels.namespace }}"
+                annotations:
+                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `{{ $labels.cluster_name }}`"
+                  description: 'Pod `{{ $labels.pod }}` seems to be stuck in a crash loop for {{ printf "%.0f" $value }} minutes. It''s time to break the cycle! :pedro:'
+              - alert: WorkerNodeIsNotReady
+                expr: kube_node_status_condition{condition="Ready", status="true"} == 0
+                for: 10m
+                labels:
+                  severity: critical
+                  node: "{{ $labels.node }}"
+                annotations:
+                  summary: "Kubernetes Node `{{ $labels.node }}` is not ready"
+                  description: "Kubernetes Node `{{ $labels.node }}` is not ready for more than 10 minutes. Time to check the health of the node! :hmmmmm:"
+    service:
+      enabled: true
+    retention: "12d"
+    alertmanager:
+      enabled: false
+    prometheus-pushgateway:
+      enabled: false
+    kube-state-metrics:
+      enabled: false
+    prometheus-node-exporter:
+      enabled: true
+      extraArgs:
+        - --no-collector.wifi
+        - --no-collector.hwmon
+        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
+        - --collector.netclass.ignored-devices=^(veth.*)$
+        - --collector.systemd
+        - --collector.processes

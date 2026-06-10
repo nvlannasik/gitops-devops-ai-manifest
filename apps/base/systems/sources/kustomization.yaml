@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flux-system
+resources:
+  - ./helm/aws-charts.yaml
+  - ./helm/aws-public-ecr.yaml
+  - ./helm/bitnami.yaml
+  - ./helm/external-secrets.yaml
+  - ./helm/fluent-bit.yaml
+  - ./helm/ingress-nginx.yaml
+  - ./helm/kubernetes-sigs.yaml
+  - ./helm/jetstack.yaml
+  - ./helm/pgadmin.yaml
+  - ./helm/oauth2-proxy.yaml
+  - ./helm/grafana.yaml
+  - ./helm/prometheus.yaml
+  - ./helm/aws-load-balancer-controller.yaml
+  - ./helm/temporalio.yaml
+  - ./helm/reloader.yaml
+  - ./helm/krakend.yaml
+  - ./helm/akhq.yaml
+  - ./helm/kafka-ui.yaml
+  - ./helm/elastic.yaml
+  - ./helm/aws-rds-exporter.yaml
+  - ./helm/main.yaml

@@ -1,0 +1,137 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: prometheus
+  namespace: flux-system
+spec:
+  values:
+    serviceAccounts:
+      server:
+        create: true
+        name: "prometheus"
+
+    serverFiles:
+      prometheus.yml:
+        scrape_configs:
+          - job_name: "kubernetes-kubelet-monitoring"
+            scheme: https
+            scrape_interval: 15s
+            honor_labels: true
+            honor_timestamps: true
+            metrics_path: /metrics
+            tls_config:
+              insecure_skip_verify: true
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            kubernetes_sd_configs:
+              - role: node
+                namespaces:
+                  names:
+                    - kube-system
+            relabel_configs:
+              - target_label: cluster_name
+                replacement: "kubernetes-cluster-dev"
+                action: replace
+              - source_labels: [__meta_kubernetes_node_name]
+                target_label: node
+              - source_labels: [__meta_kubernetes_node_address_InternalIP]
+                target_label: node_ip
+              - source_labels:
+                  [
+                    __meta_kubernetes_node_label_beta_kubernetes_io_instance_type,
+                  ]
+                target_label: node_type
+            metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: ^kubelet_volume.*$
+                replacement: $1
+                action: keep
+
+          - job_name: "kubernetes-core-dns"
+            scheme: http
+            scrape_interval: 15s
+            honor_labels: true
+            honor_timestamps: true
+            metrics_path: /metrics
+            static_configs:
+              - targets: ["kube-dns.kube-system.svc.cluster.local:9153"]
+
+          - job_name: "kubernetes-cadvisor"
+            scheme: https
+            scrape_interval: 15s
+            honor_labels: true
+            honor_timestamps: true
+            metrics_path: /metrics/cadvisor
+            tls_config:
+              insecure_skip_verify: true
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            kubernetes_sd_configs:
+              - role: node
+                namespaces:
+                  names:
+                    - kube-system
+            relabel_configs:
+              - target_label: cluster_name
+                replacement: "kubernetes-cluster-dev"
+                action: replace
+              - source_labels: [__meta_kubernetes_node_name]
+                target_label: node
+              - source_labels: [__meta_kubernetes_node_address_InternalIP]
+                target_label: node_ip
+              - source_labels:
+                  [
+                    __meta_kubernetes_node_label_beta_kubernetes_io_instance_type,
+                  ]
+                target_label: node_type
+            metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: container_(network_tcp_usage_total|network_udp_usage_total|tasks_state|cpu_load_average_10s)
+                replacement: $1
+                action: drop
+
+          - job_name: "kube-state-metrics"
+            scheme: http
+            scrape_interval: 15s
+            honor_labels: true
+            honor_timestamps: true
+            metrics_path: /metrics
+            static_configs:
+              - targets:
+                  [
+                    "kube-system-kube-state-metrics.kube-system.svc.cluster.local:8080",
+                  ]
+            relabel_configs:
+              - target_label: cluster_name
+                replacement: "kubernetes-cluster-dev"
+                action: replace
+              - source_labels: [__meta_kubernetes_node_name]
+                target_label: node
+              - source_labels: [__meta_kubernetes_node_address_InternalIP]
+                target_label: node_ip
+              - source_labels:
+                  [
+                    __meta_kubernetes_node_label_beta_kubernetes_io_instance_type,
+                  ]
+                target_label: node_type
+
+          - job_name: "prometheus-node-exporter"
+            kubernetes_sd_configs:
+              - role: endpoints
+                namespaces:
+                  names:
+                    - monitoring
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_endpoints_name]
+                regex: "monitoring-prometheus-prometheus-node-exporter"
+                action: keep
+
+          - job_name: "external-secrets"
+            scheme: http
+            scrape_interval: 15s
+            honor_labels: true
+            honor_timestamps: true
+            metrics_path: /metrics
+            static_configs:
+              - targets:
+                  [
+                    "external-secrets-metrics.kube-system.svc.cluster.local:8080",
+                  ]

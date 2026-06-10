@@ -1,0 +1,55 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: devops-llm-worker
+  namespace: flux-app
+spec:
+  targetNamespace: devop-tools
+  chart:
+    spec:
+      chart: main
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: ecr
+        namespace: flux-system
+  interval: 1m
+  install:
+    remediation:
+      retries: 3
+  values:
+    nameOverride: devops-llm-worker
+    fullnameOverride: devops-llm-worker
+    commonLabels:
+      app: devops-llm-worker
+    image:
+      repository: nvlannasik/devops-llm-worker
+      registry: docker.io
+    containerPorts:
+      - name: main
+        containerPort: 3000
+    service:
+      ports:
+        - name: http
+          port: 3000
+          protocol: TCP
+          targetPort: 3000
+    kubeVersion: "1.33.0"
+    commonAnnotations:
+      configmap.reloader.stakater.com/reload: devops-llm-worker-external-secret
+      secret.reloader.stakater.com/reload: devops-llm-worker-external-secret
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 256m
+        memory: 512Mi
+      requests:
+        cpu: 128m
+        memory: 256Mi
+    externalSecret:
+      enabled: false
+    serviceAccount:
+      create: true
+      name: "devops-llm-worker"
+      automountServiceAccountToken: true

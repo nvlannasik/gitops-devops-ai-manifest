@@ -1,0 +1,114 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: alertmanager
+  namespace: flux-system
+spec:
+  targetNamespace: monitoring
+  chart:
+    spec:
+      chart: alertmanager
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus
+      version: "1.19.0"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    image:
+      repository: quay.io/prometheus/alertmanager
+    nameOverride: "alertmanager"
+    fullnameOverride: "alertmanager"
+    automountServiceAccountToken: true
+    serviceAccount:
+      create: true
+      name: alertmanager
+    resources:
+      requests:
+        memory: 50Mi
+        cpu: 50m
+      limits:
+        memory: 200Mi
+        cpu: 200m
+    templates:
+      alertmanager.tmpl: |-
+        {{/* Alertmanager Silence link */}}
+        {{ define "__alert_silence_link" -}}
+            {{ .ExternalURL }}/#/silences/new?filter=%7B
+            {{- range .CommonLabels.SortedPairs -}}
+                {{- if ne .Name "alertname" -}}
+                    {{- .Name }}%3D"{{- .Value -}}"%2C%20
+                {{- end -}}
+            {{- end -}}
+            alertname%3D"{{- .CommonLabels.alertname -}}"%7D
+        {{- end }}
+
+        {{/* Severity of the alert */}}
+        {{ define "__alert_severity" -}}
+            {{- if eq .CommonLabels.severity "critical" -}}
+            *Severity:* :alert: `Critical` :alert:
+            {{- else if eq .CommonLabels.severity "warning" -}}
+            *Severity:* :this-is-fine-fire: `Warning` :this-is-fine-fire:
+            {{- else if eq .CommonLabels.severity "info" -}}
+            *Severity:* :what: `Info` :what: 
+            {{- else if eq .CommonLabels.severity "sqs" -}}
+            *Severity:* :this-is-fine-fire: `AWS SQS Alert !!!` :this-is-fine-fire:
+            {{- else -}}
+            *Severity:* :question: {{ .CommonLabels.severity }}
+            {{- end }}
+        {{- end }}
+
+        {{/* Title of the Slack alert */}}
+        {{ define "slack.title" -}}
+          [{{ .Status | toUpper -}}
+          {{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}
+          ] {{ .CommonLabels.alertname }}
+        {{- end }}
+
+
+        {{/* Color of Slack attachment (appears as line next to alert )*/}}
+        {{ define "slack.color" -}}
+            {{ if eq .Status "firing" -}}
+                {{ if eq .CommonLabels.severity "warning" -}}
+                    warning
+                {{- else if eq .CommonLabels.severity "critical" -}}
+                    danger
+                {{- else if eq .CommonLabels.severity "sqs" -}}
+                    danger
+                {{- else -}}
+                    #439FE0
+                {{- end -}}
+            {{ else -}}
+            good
+            {{- end }}
+        {{- end }}
+
+        {{/* The text to display in the alert */}}
+        {{ define "slack.text" -}}
+
+            {{ template "__alert_severity" . }}
+            {{- if (index .Alerts 0).Annotations.summary }}
+            {{- "\n" -}}
+            *Summary:* {{ (index .Alerts 0).Annotations.summary }}
+            {{- end }}
+
+            {{ range .Alerts }}
+
+                {{- if .Annotations.description }}
+                {{- "\n" -}}
+                {{ .Annotations.description }}
+                {{- "\n" -}}
+                {{- end }}
+                {{- if .Annotations.message }}
+                {{- "\n" -}}
+                {{ .Annotations.message }}
+                {{- "\n" -}}
+                {{- end }}
+
+            {{- end }}
+
+        {{- end }}

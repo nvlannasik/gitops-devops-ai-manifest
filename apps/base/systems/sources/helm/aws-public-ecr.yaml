@@ -1,0 +1,9 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: aws-public-ecr
+spec:
+  interval: 30m
+  url: oci://public.ecr.aws/aws-ec2/helm
+  type: oci
+  provider: aws

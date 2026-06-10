@@ -1,0 +1,8 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: kafka-ui
+spec:
+  timeout: 5m
+  interval: 10m
+  url: https://provectus.github.io/kafka-ui-charts
