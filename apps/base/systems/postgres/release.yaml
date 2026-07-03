@@ -7,7 +7,7 @@ spec:
   targetNamespace: postgresql
   chart:
     spec:
-      chart: bitnami/postgresql
+      chart: postgresql
       reconcileStrategy: Revision
       sourceRef:
         kind: HelmRepository
