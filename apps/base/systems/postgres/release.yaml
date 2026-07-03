@@ -24,7 +24,7 @@ spec:
       registry: registry-1.docker.io
       repository: bitnami/postgresql
     fullnameOverride: "postgresql"
-    auth:
-      existingSecret: "postgresql-secret"
+    # auth:
+    #   existingSecret: "postgresql-secret"
     containerPorts:
       postgresql: 5432
