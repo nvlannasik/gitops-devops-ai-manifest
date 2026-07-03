@@ -1,10 +1,10 @@
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: ecr
   namespace: flux-system
 spec:
   interval: 5m0s
-  url: oci://476114140166.dkr.ecr.ap-southeast-1.amazonaws.com
+  url: oci://public.ecr.aws/m6e7l0s5/main
   type: oci
   provider: aws
