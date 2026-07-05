@@ -9,9 +9,7 @@ spec:
   interval: 1m0s
   ref:
     branch: main
-  secretRef:
-    name: flux-system
-  url: ssh://git@github.com/nvlannasik/gitops-devops-ai-manifest.git
+  url: https://github.com/nvlannasik/gitops-devops-ai-manifest
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
