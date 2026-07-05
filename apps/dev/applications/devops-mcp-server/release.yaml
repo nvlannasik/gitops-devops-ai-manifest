@@ -8,33 +8,24 @@ spec:
   chart:
     spec:
       version: 1.0.1
-  interval: 1m
-  install:
-    remediation:
-      retries: 3
   values:
-    nameOverride: devops-mcp-server
-    fullnameOverride: devops-mcp-server
-    commonLabels:
-      app: devops-mcp-server
     image:
-      repository: nvlannasik/devops-mcp-server
-      registry: docker.io
-    containerPorts:
-      - name: main
-        containerPort: 3000
-    service:
-      ports:
-        - name: http
-          port: 3000
-          protocol: TCP
-          targetPort: 3000
-    kubeVersion: "1.33.0"
-    commonAnnotations:
-      configmap.reloader.stakater.com/reload: devops-mcp-server-external-secret
-      secret.reloader.stakater.com/reload: devops-mcp-server-external-secret
-    ingress:
-      enabled: false
+      tag: latest
+    extraEnvVars:
+      - name: TRANSPORT
+        value: "http"
+      - name: NODE_ENV
+        value: "prod"
+      - name: PORT
+        value: "3000"
+      - name: MCP_TRANSPORT
+        value: "http"
+      - name: K8S_AUTH_MODE
+        value: "incluster"
+      - name: PROMETHEUS_URL
+        value: "http://prometheus.monitoring.svc.cluster.local:9090"
+      - name: LOKI_URL
+        value: "http://loki.monitoring.svc.cluster.local:3100"  
     resources:
       limits:
         cpu: 256m
@@ -44,7 +35,3 @@ spec:
         memory: 256Mi
     externalSecret:
       enabled: false
-    serviceAccount:
-      create: true
-      name: "devops-mcp-server"
-      automountServiceAccountToken: true
