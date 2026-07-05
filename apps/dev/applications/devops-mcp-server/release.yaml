@@ -7,12 +7,7 @@ spec:
   targetNamespace: devop-tools
   chart:
     spec:
-      chart: main
-      reconcileStrategy: Revision
-      sourceRef:
-        kind: HelmRepository
-        name: ecr
-        namespace: flux-system
+      version: 1.0.1
   interval: 1m
   install:
     remediation:

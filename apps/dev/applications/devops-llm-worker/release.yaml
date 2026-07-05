@@ -7,16 +7,7 @@ spec:
   targetNamespace: devop-tools
   chart:
     spec:
-      chart: main
-      reconcileStrategy: Revision
-      sourceRef:
-        kind: HelmRepository
-        name: ecr
-        namespace: flux-system
-  interval: 1m
-  install:
-    remediation:
-      retries: 3
+      version: 1.0.1
   values:
     nameOverride: devops-llm-worker
     fullnameOverride: devops-llm-worker
