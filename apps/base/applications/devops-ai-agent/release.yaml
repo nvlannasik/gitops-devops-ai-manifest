@@ -11,7 +11,7 @@ spec:
       reconcileStrategy: Revision
       sourceRef:
         kind: HelmRepository
-        name: ecr
+        name: github
         namespace: flux-system
   interval: 1m
   install:

@@ -1,10 +1,10 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: ecr
+  name: github
   namespace: flux-system
 spec:
   interval: 5m0s
-  url: oci://public.ecr.aws/m6e7l0s5/main
+  url: oci://ghcr.io/nvlannasik/main
   type: oci
-  provider: aws
+  provider: generic
