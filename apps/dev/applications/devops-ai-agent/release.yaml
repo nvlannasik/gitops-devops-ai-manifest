@@ -79,15 +79,7 @@ spec:
     loggingOperator:
       enabled: false
     secretStore:
-      enabled: true
-      provider:
-        aws:
-          service: SecretsManager
-          region: ap-southeast-1
-          auth:
-            jwt:
-              serviceAccountRef:
-                name: "devops-ai-agent"
+      enabled: false
     resources:
       limits:
         cpu: 50m
