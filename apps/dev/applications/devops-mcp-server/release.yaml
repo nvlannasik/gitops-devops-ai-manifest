@@ -4,7 +4,6 @@ metadata:
   name: devops-mcp-server
   namespace: flux-app
 spec:
-  targetNamespace: devop-tools
   chart:
     spec:
       version: 1.0.1
