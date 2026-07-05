@@ -4,7 +4,7 @@ metadata:
   name: devops-ai-agent
   namespace: flux-app
 spec:
-  targetNamespace: devop-tools
+  targetNamespace: devops-tools
   chart:
     spec:
       chart: main
