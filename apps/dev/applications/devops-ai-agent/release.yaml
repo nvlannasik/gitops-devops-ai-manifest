@@ -48,6 +48,21 @@ spec:
         value: "C09R0F6F891"
       - name: SLACK_ONCALL_USERS
         value: "U03RCHDHUH5"
+      - name: DB_HOST
+        value: "postgresql.postgresql"
+      - name: DB_PORT
+        value: "5432"
+      - name: DB_USERNAME
+        value: "postgres"
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: devops-agent-secret
+            key: DB_PASSWORD
+      - name: DB_NAME
+        value: "devops_agent"
+      - name: DB_SSL_MODE
+        value: "disable"
       - name: SLACK_BOT_TOKEN
         valueFrom:
           secretKeyRef:
@@ -68,8 +83,35 @@ spec:
           secretKeyRef:
             name: devops-agent-secret
             key: REDIS_PASSWORD
+      - name: AWS_TRUST_ANCHOR_ARN
+        valueFrom:
+          secretKeyRef:
+            name: aws-rolesanywhere-config
+            key: trust-anchor-arn
+      - name: AWS_ROLESANYWHERE_PROFILE_ARN
+        valueFrom:
+          secretKeyRef:
+            name: aws-rolesanywhere-config
+            key: profile-arn
+      - name: AWS_ROLE_ARN
+        valueFrom:
+          secretKeyRef:
+            name: aws-rolesanywhere-config
+            key: role-arn
+      - name: CERT_PATH
+        value: "/certs/tls.crt"
+      - name: CERT_KEY_PATH
+        value: "/certs/tls.key"
     secret:
       enabled: false
+    extraVolumes:
+      - name: workload-cert
+        secret:
+          secretName: workload-tls
+    extraVolumeMounts:
+      - name: workload-cert
+        mountPath: /certs
+        readOnly: true
     replicaCount: 1
     updateStrategy:
       type: RollingUpdate
