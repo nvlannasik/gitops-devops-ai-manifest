@@ -21,7 +21,7 @@ spec:
       - name: MCP_TRANSPORT
         value: "http"
       - name: MCP_HTTP_URL
-        value: "http://devops-mcp-server.devops-tools/mcp"
+        value: "http://devops-mcp-server.devops-tools:3000/mcp"
       - name: SQS_REQUEST_QUEUE_NAME
         value: "llm-request.fifo"
       - name: SQS_RESPONSE_QUEUE_NAME
