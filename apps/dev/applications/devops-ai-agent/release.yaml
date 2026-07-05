@@ -51,22 +51,22 @@ spec:
       - name: SLACK_BOT_TOKEN
         valueFrom:
           secretKeyRef:
-            name: devops-ai-agent-external-secret
+            name: devops-agent-secret
             key: SLACK_BOT_TOKEN
       - name: SLACK_SIGNING_SECRET
         valueFrom:
           secretKeyRef:
-            name: devops-ai-agent-external-secret
+            name: devops-agent-secret
             key: SLACK_SIGNING_SECRET
       - name: SLACK_APP_TOKEN
         valueFrom:
           secretKeyRef:
-            name: devops-ai-agent-external-secret
+            name: devops-agent-secret
             key: SLACK_APP_TOKEN
       - name: REDIS_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: devops-ai-agent-external-secret
+            name: devops-agent-secret
             key: REDIS_PASSWORD
     secret:
       enabled: false
