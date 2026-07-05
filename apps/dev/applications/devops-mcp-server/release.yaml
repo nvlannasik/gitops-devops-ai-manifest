@@ -25,12 +25,6 @@ spec:
         value: "http://prometheus.monitoring.svc.cluster.local:9090"
       - name: LOKI_URL
         value: "http://loki.monitoring.svc.cluster.local:3100"  
-    resources:
-      limits:
-        cpu: 256m
-        memory: 512Mi
-      requests:
-        cpu: 128m
-        memory: 256Mi
+    resources: {}
     externalSecret:
       enabled: false
