@@ -7,3 +7,6 @@ spec:
   values:
     image:
       tag: latest
+    auth:
+      username: postgres
+      password: postgres
