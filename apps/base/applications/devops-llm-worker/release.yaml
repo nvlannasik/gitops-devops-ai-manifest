@@ -23,7 +23,7 @@ spec:
     commonLabels:
       app: devops-llm-worker
     image:
-      repository: nvlannasik/devops-llm-worker
+      repository: nvlannasik/llm-worker
       registry: docker.io
     containerPorts:
       - name: main
