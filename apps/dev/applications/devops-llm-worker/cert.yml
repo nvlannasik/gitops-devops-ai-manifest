@@ -1,0 +1,27 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: workload-cert
+  namespace: devops-tools
+  labels:
+    app.kubernetes.io/component: workload-cert
+spec:
+  secretName: workload-tls
+  duration: 720h
+  renewBefore: 48h
+  commonName: my-workload
+  subject:
+    organizations:
+      - MyOrg
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - digital signature
+    - key encipherment
+    - client auth
+  issuerRef:
+    name: workload-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

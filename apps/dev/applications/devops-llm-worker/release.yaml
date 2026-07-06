@@ -8,38 +8,58 @@ spec:
     spec:
       version: 1.0.1
   values:
-    nameOverride: devops-llm-worker
-    fullnameOverride: devops-llm-worker
-    commonLabels:
-      app: devops-llm-worker
     image:
-      repository: nvlannasik/devops-llm-worker
-      registry: docker.io
-    containerPorts:
-      - name: main
-        containerPort: 3000
-    service:
-      ports:
-        - name: http
-          port: 3000
-          protocol: TCP
-          targetPort: 3000
-    kubeVersion: "1.33.0"
-    commonAnnotations:
-      configmap.reloader.stakater.com/reload: devops-llm-worker-external-secret
-      secret.reloader.stakater.com/reload: devops-llm-worker-external-secret
-    ingress:
-      enabled: false
-    resources:
-      limits:
-        cpu: 256m
-        memory: 512Mi
-      requests:
-        cpu: 128m
-        memory: 256Mi
-    externalSecret:
-      enabled: false
-    serviceAccount:
-      create: true
-      name: "devops-llm-worker"
-      automountServiceAccountToken: true
+      tag: latest
+    extraEnvVars:
+      - name: SQS_REQUEST_QUEUE_NAME
+        value: "llm-request.fifo"
+      - name: SQS_RESPONSE_QUEUE_NAME
+        value: "llm-response.fifo"
+      - name: SQS_REQUEST_DLQ_NAME
+        value: "llm-request-dlq.fifo"
+      - name: SQS_POLL_WAIT_SECONDS
+        value: "20"
+      - name: SQS_MAX_MESSAGES
+        value: "10"
+      - name: AWS_REGION
+        value: "ap-southeast-1"
+      - name: LLM_BASE_URL
+        value: "https://api.openai.com/v1"
+      - name: LLM_MODEL
+        value: "gpt-5-nano-2025-08-07"
+      - name: LLM_MAX_TOKENS
+        value: "8096"
+      - name: LLM_USE_MAX_COMPLETION_TOKENS
+        value: "true"
+      - name: LLM_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: llm-api-key-secret
+            key: api-key
+      - name: AWS_TRUST_ANCHOR_ARN
+        valueFrom:
+          secretKeyRef:
+            name: aws-rolesanywhere-config
+            key: trust-anchor-arn
+      - name: AWS_ROLESANYWHERE_PROFILE_ARN
+        valueFrom:
+          secretKeyRef:
+            name: aws-rolesanywhere-config
+            key: profile-arn
+      - name: AWS_ROLE_ARN
+        valueFrom:
+          secretKeyRef:
+            name: aws-rolesanywhere-config
+            key: role-arn
+      - name: CERT_PATH
+        value: "/certs/tls.crt"
+      - name: CERT_KEY_PATH
+        value: "/certs/tls.key"
+    extraVolumes:
+      - name: workload-cert
+        secret:
+          secretName: workload-tls
+    extraVolumeMounts:
+      - name: workload-cert
+        mountPath: /certs
+        readOnly: true
