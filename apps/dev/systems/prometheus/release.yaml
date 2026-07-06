@@ -9,6 +9,7 @@ spec:
       server:
         create: true
         name: "prometheus"
+        annotations: {}
 
     serverFiles:
       prometheus.yml:
@@ -123,15 +124,3 @@ spec:
               - source_labels: [__meta_kubernetes_endpoints_name]
                 regex: "monitoring-prometheus-prometheus-node-exporter"
                 action: keep
-
-          - job_name: "external-secrets"
-            scheme: http
-            scrape_interval: 15s
-            honor_labels: true
-            honor_timestamps: true
-            metrics_path: /metrics
-            static_configs:
-              - targets:
-                  [
-                    "external-secrets-metrics.kube-system.svc.cluster.local:8080",
-                  ]

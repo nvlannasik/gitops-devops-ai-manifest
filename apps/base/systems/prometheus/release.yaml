@@ -12,7 +12,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: prometheus
-      version: "27.22.0"
+      version: "29.14.0"
   interval: 5m0s
   install:
     remediation:
@@ -23,7 +23,7 @@ spec:
       enabled: true
       image:
         repository: quay.io/prometheus/prometheus
-        tag: "v3.4.1"
+        tag: "v3.13.0"
       persistentVolume:
         enabled: false
       alertmanagers:
@@ -34,11 +34,17 @@ spec:
       replicaCount: 1
       statefulSet:
         enabled: false
+      service:
+        enabled: true
+      retention: "12d"
+
     configmapReload:
-      enabled: true
-      image:
-        repository: quay.io/prometheus-operator/prometheus-config-reloader
-        tag: v0.83.0
+      prometheus:
+        enabled: true
+        image:
+          repository: quay.io/prometheus-operator/prometheus-config-reloader
+          tag: v0.92.1
+
     serverFiles:
       prometheus.yml:
         rule_files:
@@ -78,9 +84,7 @@ spec:
                 annotations:
                   summary: "Kubernetes Node `{{ $labels.node }}` is not ready"
                   description: "Kubernetes Node `{{ $labels.node }}` is not ready for more than 10 minutes. Time to check the health of the node! :hmmmmm:"
-    service:
-      enabled: true
-    retention: "12d"
+
     alertmanager:
       enabled: false
     prometheus-pushgateway:
@@ -89,10 +93,3 @@ spec:
       enabled: false
     prometheus-node-exporter:
       enabled: true
-      extraArgs:
-        - --no-collector.wifi
-        - --no-collector.hwmon
-        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
-        - --collector.netclass.ignored-devices=^(veth.*)$
-        - --collector.systemd
-        - --collector.processes

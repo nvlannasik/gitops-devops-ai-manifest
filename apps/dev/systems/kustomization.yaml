@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - ../../../apps/base/systems/sources
   - reloader
-  # - prometheus
+  - prometheus
   # - cert-manager
-  # - alertmanager
+  - alertmanager
   - postgres
