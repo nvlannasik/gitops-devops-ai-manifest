@@ -10,3 +10,4 @@ spec:
     auth:
       username: postgres
       password: postgres
+      postgresPassword: postgres
