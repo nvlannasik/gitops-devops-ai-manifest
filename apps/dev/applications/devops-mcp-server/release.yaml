@@ -27,6 +27,10 @@ spec:
         value: "http://loki.monitoring.svc.cluster.local:3100"
       - name: MCP_AUTH_TOKEN
         value: "bIjIS4tu"
+      - name: TRACING_BACKEND
+        value: "jaeger"
+      - name: TRACING_URL
+        value: "http://jaeger-query.observability.svc.cluster.local:16686"
     resources: {}
     externalSecret:
       enabled: false
