@@ -49,7 +49,7 @@ spec:
               - prometheus.annasik.cloud
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
-          ingress.kubernetes.io/rewrite-target: /
+          # ingress.kubernetes.io/rewrite-target: /
           nginx.ingress.kubernetes.io/ssl-redirect: "true"
     configmapReload:
       prometheus:
