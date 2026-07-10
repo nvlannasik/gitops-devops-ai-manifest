@@ -37,6 +37,16 @@ spec:
       service:
         enabled: true
       retention: "12d"
+      ingress:
+        enabled: true
+        ingressClassName: nginx
+        hosts:
+          - prometheus.annasik.cloud
+        path: "/"
+        tls:
+          - secretName: prometheus-tls
+            hosts:
+              - prometheus.annasik.cloud
 
     configmapReload:
       prometheus:
