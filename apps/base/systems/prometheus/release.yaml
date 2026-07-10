@@ -51,7 +51,7 @@ spec:
           cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
           ingress.kubernetes.io/rewrite-target: /
           nginx.ingress.kubernetes.io/ssl-redirect: "true"
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     configmapReload:
       prometheus:
         enabled: true
