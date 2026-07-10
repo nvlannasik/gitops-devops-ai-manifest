@@ -22,7 +22,7 @@ spec:
       - name: K8S_AUTH_MODE
         value: "incluster"
       - name: PROMETHEUS_URL
-        value: "http://prometheus.monitoring.svc.cluster.local:9090"
+        value: "http://monitoring-prometheus-server.monitoring.svc.cluster.local:9090"
       - name: LOKI_URL
         value: "http://loki.monitoring.svc.cluster.local:3100"  
     resources: {}
