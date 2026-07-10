@@ -52,6 +52,8 @@ spec:
         value: "postgresql.postgresql"
       - name: DB_PORT
         value: "5432"
+      - name: MCP_AUTH_TOKEN
+        value: "bIjIS4tu"
       - name: DB_USERNAME
         value: "postgres"
       - name: DB_PASSWORD
