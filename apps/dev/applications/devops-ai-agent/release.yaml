@@ -31,7 +31,7 @@ spec:
       - name: SQS_POLL_WAIT_SECONDS
         value: "20"
       - name: SQS_LLM_TIMEOUT_SECONDS
-        value: "120"
+        value: "240"
       - name: MEMORY_BACKEND
         value: "redis"
       - name: REDIS_HOST

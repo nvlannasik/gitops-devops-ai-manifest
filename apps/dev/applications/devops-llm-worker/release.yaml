@@ -28,7 +28,7 @@ spec:
       - name: LLM_MODEL
         value: "gpt-5-nano-2025-08-07"
       - name: LLM_MAX_TOKENS
-        value: "8096"
+        value: "16384"
       - name: LLM_USE_MAX_COMPLETION_TOKENS
         value: "true"
       - name: LLM_API_KEY
