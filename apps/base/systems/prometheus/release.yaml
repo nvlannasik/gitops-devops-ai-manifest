@@ -67,15 +67,14 @@ spec:
           - name: job
             rules:
               - alert: KubernetesPodNotHealthy
-                expr: sum by (namespace, pod, cluster_name) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
+                expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
                 for: 10m
                 labels:
                   severity: critical
                   pod: "{{ $labels.pod }}"
-                  cluster_name: "{{ $labels.cluster_name }}"
                   namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `{{ $labels.cluster_name }}`"
+                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `Dev cluster`"
                   description: "Not feeling so well! Pod `{{ $labels.pod }}` has health issues. Time for a check-up! :pepe_susq:"
               - alert: KubernetesPodCrashLooping
                 expr: increase(kube_pod_container_status_restarts_total[5m]) > 1
@@ -83,10 +82,9 @@ spec:
                 labels:
                   severity: critical
                   pod: "{{ $labels.pod }}"
-                  cluster_name: "{{ $labels.cluster_name }}"
                   namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `{{ $labels.cluster_name }}`"
+                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `Dev cluster`"
                   description: 'Pod `{{ $labels.pod }}` seems to be stuck in a crash loop for {{ printf "%.0f" $value }} minutes. It''s time to break the cycle! :pedro:'
               - alert: WorkerNodeIsNotReady
                 expr: kube_node_status_condition{condition="Ready", status="true"} == 0
