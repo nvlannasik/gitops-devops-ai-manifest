@@ -27,6 +27,12 @@ spec:
         value: "http://loki.monitoring.svc.cluster.local:3100"
       - name: MCP_AUTH_TOKEN
         value: "bIjIS4tu"
+      - name: MCP_ENABLE_WRITE_TOOLS
+        value: "true"
+      - name: ALLOWED_REMEDIATION_NAMESPACES
+        value: "dev-auth,nginx-ingress,default"
+      - name: MAX_SCALE_DELTA
+        value: "5"
       - name: TRACING_BACKEND
         value: "jaeger"
       - name: TRACING_URL

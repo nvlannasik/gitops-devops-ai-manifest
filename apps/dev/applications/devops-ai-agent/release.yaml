@@ -54,6 +54,8 @@ spec:
         value: "5432"
       - name: MCP_AUTH_TOKEN
         value: "bIjIS4tu"
+      - name: SLACK_APPROVER_USERS
+        value: "U0BGYRD1EPM"
       - name: DB_USERNAME
         value: "postgres"
       - name: DB_PASSWORD
