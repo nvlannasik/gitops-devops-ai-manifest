@@ -42,8 +42,20 @@ spec:
               prefix: index_
               period: 24h
 
+      chunkStoreConfig:
+        chunk_cache_config:
+          embedded_cache:
+            enabled: false
+
+      queryRange:
+        cache_results: false
+        results_cache:
+          cache:
+            embedded_cache:
+              enabled: false
+
       limits_config:
-        retention_period: 168h  # 7 hari, sesuaikan biar ga penuhin storage
+        retention_period: 168h
         ingestion_rate_mb: 4
         ingestion_burst_size_mb: 6
 
@@ -56,10 +68,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 256Mi
+          memory: 192Mi
         limits:
           cpu: 500m
-          memory: 512Mi
+          memory: 384Mi
 
     # Matikan komponen yang ga perlu di single binary mode
     backend:
