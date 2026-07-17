@@ -4,4 +4,4 @@ metadata:
   name: grafana
 spec:
   interval: 30m
-  url: https://grafana.github.io/helm-charts
+  url: oci://ghcr.io/grafana-community/helm-charts
