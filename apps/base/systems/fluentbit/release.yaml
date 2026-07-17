@@ -59,9 +59,9 @@ spec:
             Match       kube.*
             Host        loki.monitoring.svc.cluster.local
             Port        3100
-            Labels      job=fluentbit
-            Label_keys  $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name']
-            Remove_keys kubernetes,stream
+            Labels      job=fluentbit, namespace=$kubernetes['namespace_name'], pod=$kubernetes['pod_name'], container=$kubernetes['container_name'], stream=$stream
+            Remove_keys kubernetes
+            Auto_kubernetes_labels off
 
     resources:
       requests:
