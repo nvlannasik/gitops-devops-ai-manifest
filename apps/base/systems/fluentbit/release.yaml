@@ -1,0 +1,68 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: fluentbit
+  namespace: flux-system
+spec:
+  targetNamespace: monitoring
+  chart:
+    spec:
+      chart: fluent-bit
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: fluent-bit
+      version: "0.57.9"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    nameOverride: "fluentbit"
+    fullnameOverride: "fluentbit"
+    config:
+      service: |
+        [SERVICE]
+            Flush         5
+            Log_Level     info
+            Daemon        off
+            Parsers_File  parsers.conf
+
+      inputs: |
+        [INPUT]
+            Name              tail
+            Path              /var/log/containers/*.log
+            Parser            docker
+            Tag               kube.*
+            Refresh_Interval  5
+            Mem_Buf_Limit     5MB
+            Skip_Long_Lines   On
+
+      filters: |
+        [FILTER]
+            Name                kubernetes
+            Match               kube.*
+            Kube_URL            https://kubernetes.default.svc:443
+            Merge_Log           On
+            Keep_Log            Off
+            K8S-Logging.Parser  On
+            K8S-Logging.Exclude On
+
+      outputs: |
+        [OUTPUT]
+            Name        loki
+            Match       kube.*
+            Host        loki.monitoring.svc.cluster.local
+            Port        3100
+            Labels      job=fluentbit
+            Label_keys  $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name']
+            Remove_keys kubernetes,stream
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
