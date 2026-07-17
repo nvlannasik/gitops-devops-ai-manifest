@@ -32,7 +32,6 @@ spec:
       ingressClassName: nginx
       hosts:
         - grafana.annasik.cloud
-      path: "/"
       tls:
         - secretName: grafana-tls
           hosts:
