@@ -23,6 +23,11 @@ spec:
     fullnameOverride: "loki"
     deploymentMode: Monolithic
 
+    chunksCache:
+      enabled: false
+    resultsCache:
+      enabled: false
+
     loki:
       auth_enabled: false
 
@@ -73,7 +78,6 @@ spec:
           cpu: 500m
           memory: 384Mi
 
-    # Matikan komponen yang ga perlu di single binary mode
     backend:
       replicas: 0
     read:
@@ -81,7 +85,6 @@ spec:
     write:
       replicas: 0
 
-    # Matikan komponen tambahan yang berat & ga esensial untuk homelab
     gateway:
       enabled: false
 
