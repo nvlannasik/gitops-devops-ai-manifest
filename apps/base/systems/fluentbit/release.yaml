@@ -28,6 +28,10 @@ spec:
             Log_Level     info
             Daemon        off
             Parsers_File  parsers.conf
+            HTTP_Server   On
+            HTTP_Listen   0.0.0.0
+            HTTP_PORT     2020
+            Health_Check  On
 
       inputs: |
         [INPUT]
