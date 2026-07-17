@@ -1,0 +1,123 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  targetNamespace: monitoring
+  chart:
+    spec:
+      chart: grafana
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+      version: "12.7.2"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    image:
+      repository: grafana/grafana
+      registry: docker.io
+      pullPolicy: IfNotPresent
+    serviceAccount:
+      create: true
+      name: grafana
+      automountServiceAccountToken: true
+    replicaCount: 1
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - grafana.annasik.cloud
+      path: "/"
+      tls:
+        - secretName: grafana-tls
+          hosts:
+            - grafana.annasik.cloud
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        ingress.kubernetes.io/rewrite-target: /
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      path: /
+      pathType: Prefix
+    grafana.ini:
+      auth.anonymous:
+        enabled: false
+        org_role: Admin
+      auth.google:
+        enabled: false
+    persistence:
+      enabled: true
+      type: pvc
+      storageClass: longhorn
+      accessModes:
+        - ReadWriteOnce
+      size: 2Gi
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: "default"
+            orgId: 1
+            folder: "Home"
+            type: file
+            disableDeletion: false
+            allowUiUpdates: true
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/default
+          - name: "generic"
+            orgId: 1
+            folder: "Generic"
+            folderUid: "fe58b6nm6fgn4a"
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/generic
+          - name: "kubernetes"
+            orgId: 1
+            folder: "Kubernetes"
+            folderUid: "ce58b6nkg0000b"
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/kubernetes
+          - name: "generic-2"
+            orgId: 1
+            folder: "Generic"
+            folderUid: "fe58b6nm6fgn4a"
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/generic-2
+          - name: "database"
+            orgId: 1
+            folder: "Database"
+            folderUid: "de58b6nkg0000b"
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/database
+          - name: "logging"
+            orgId: 1
+            folder: "Logging"
+            folderUid: "le58b6nkg0000b"
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/logging
+    dashboardsConfigMaps:
+      default: home-dashboards
+      generic: generic-dashboards
+      kubernetes: kubernetes-dashboards
+      generic-2: generic-dashboards-2
+      logging: logging-dashboards
+      database: database-dashboards

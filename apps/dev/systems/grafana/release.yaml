@@ -1,0 +1,31 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: flux-system
+spec:
+  values:
+    replicas: 1
+    image:
+      tag: 13.1.0
+    grafana.ini:
+      server:
+        root_url: https://grafana.annasik.cloud
+        domain: grafana.annasik.cloud
+    assertNoLeakedSecrets: false
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://monitoring-prometheus-server.monitoring.svc.cluster.local
+            access: proxy
+            isDefault: true
+            uid: prometheus
+          - name: Loki
+            type: loki
+            url: http://loki.monitoring.svc.cluster.local:3100
+            access: proxy
+            isDefault: false
+            uid: loki

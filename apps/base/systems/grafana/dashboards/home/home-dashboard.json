@@ -1,0 +1,195 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "description": "",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<table style=\"border-collapse: collapse; width: 100%;\" border=\"1\">\r\n<tbody>\r\n<tr>\r\n<td style=\"width: 15%; text-align: center;\"><img src=\"https://cdn.prod.website-files.com/6673fcc09578f29ff518d91e/6694e3db785e92e599fa0f34_new%20logo%20white-p-500.png\" alt=\"\"/></td>\r\n<td style=\"width: 100%; text-align: center;\"><h1><strong>Welcome to Home Lab Environment Monitoring Dashboard</strong></h1></td>\r\n</tr>\r\n</tbody>\r\n</table>",
+        "mode": "html"
+      },
+      "pluginVersion": "11.3.1",
+      "title": "Headline",
+      "type": "text"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 0,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "folderUID": "de58b6nkg0000b",
+        "includeVars": false,
+        "keepTime": false,
+        "maxItems": 10,
+        "query": "",
+        "showFolderNames": true,
+        "showHeadings": false,
+        "showRecentlyViewed": false,
+        "showSearch": true,
+        "showStarred": false,
+        "tags": []
+      },
+      "pluginVersion": "11.3.1",
+      "title": "Database Overview",
+      "type": "dashlist"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 6,
+        "y": 5
+      },
+      "id": 16,
+      "options": {
+        "folderId": 2,
+        "folderUID": "ce58b6nkg0000b",
+        "includeVars": false,
+        "keepTime": false,
+        "maxItems": 10,
+        "query": "",
+        "showFolderNames": true,
+        "showHeadings": false,
+        "showRecentlyViewed": false,
+        "showSearch": true,
+        "showStarred": false,
+        "tags": []
+      },
+      "pluginVersion": "11.3.1",
+      "title": "Kubernetes",
+      "type": "dashlist"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 12,
+        "y": 5
+      },
+      "id": 13,
+      "options": {
+        "folderUID": "le58b6nkg0000b",
+        "includeVars": false,
+        "keepTime": false,
+        "maxItems": 10,
+        "query": "",
+        "showFolderNames": true,
+        "showHeadings": false,
+        "showRecentlyViewed": false,
+        "showSearch": true,
+        "showStarred": false,
+        "tags": []
+      },
+      "pluginVersion": "11.3.1",
+      "title": "Logging by Loki",
+      "type": "dashlist"
+    },
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 5
+      },
+      "id": 8,
+      "options": {
+        "folderId": 4,
+        "folderUID": "fe58b6nm6fgn4a",
+        "includeVars": false,
+        "keepTime": false,
+        "maxItems": 20,
+        "query": "",
+        "showFolderNames": true,
+        "showHeadings": false,
+        "showRecentlyViewed": false,
+        "showSearch": true,
+        "showStarred": false,
+        "tags": []
+      },
+      "pluginVersion": "11.3.1",
+      "title": "Generic",
+      "type": "dashlist"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": true
+  },
+  "timezone": "",
+  "title": "Dashboard",
+  "uid": "8tMXF944z",
+  "version": 2,
+  "weekStart": ""
+}
