@@ -56,7 +56,6 @@ spec:
         nginx.ingress.kubernetes.io/auth-type: basic
         nginx.ingress.kubernetes.io/auth-secret: headlamp-basic-auth
         nginx.ingress.kubernetes.io/auth-realm: "Authentication Required - Headlamp"
-        ingress.kubernetes.io/rewrite-target: /
       path: /
 
     resources:
