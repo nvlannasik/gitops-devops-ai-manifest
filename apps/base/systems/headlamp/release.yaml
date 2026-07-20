@@ -27,6 +27,10 @@ spec:
       registry: ghcr.io
       repository: headlamp-k8s/headlamp
 
+    config:
+      inCluster: true
+      inClusterContextName: "main"
+
     serviceAccount:
       create: true
       name: headlamp
