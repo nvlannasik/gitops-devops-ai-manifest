@@ -1,0 +1,60 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: headlamp
+  namespace: flux-system
+spec:
+  targetNamespace: headlamp
+  chart:
+    spec:
+      chart: headlamp
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: headlamp
+      version: "0.43.0"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    nameOverride: "headlamp"
+    fullnameOverride: "headlamp"
+    replicaCount: 1
+
+    image:
+      repository: ghcr.io/headlamp-k8s/headlamp
+
+    serviceAccount:
+      create: true
+      name: headlamp
+
+    service:
+      type: ClusterIP
+      port: 80
+
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - headlamp.annasik.cloud
+      tls:
+        - secretName: headlamp-tls
+          hosts:
+            - headlamp.annasik.cloud
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-secret: headlamp-basic-auth
+        nginx.ingress.kubernetes.io/auth-realm: "Authentication Required - Headlamp"
+        ingress.kubernetes.io/rewrite-target: /
+      path: /
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi

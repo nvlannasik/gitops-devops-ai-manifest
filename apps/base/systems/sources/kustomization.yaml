@@ -23,3 +23,4 @@ resources:
   - ./helm/elastic.yaml
   - ./helm/aws-rds-exporter.yaml
   - ./helm/main.yaml
+  - ./helm/headlamp.yaml
