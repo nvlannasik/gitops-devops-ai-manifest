@@ -24,7 +24,8 @@ spec:
     replicaCount: 1
 
     image:
-      repository: ghcr.io/headlamp-k8s/headlamp
+      registry: ghcr.io
+      repository: headlamp-k8s/headlamp
 
     serviceAccount:
       create: true
@@ -38,7 +39,10 @@ spec:
       enabled: true
       ingressClassName: nginx
       hosts:
-        - headlamp.annasik.cloud
+        - host: headlamp.annasik.cloud
+          paths:
+            - path: /
+              pathType: Prefix
       tls:
         - secretName: headlamp-tls
           hosts:
