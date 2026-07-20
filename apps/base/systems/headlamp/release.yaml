@@ -27,9 +27,9 @@ spec:
       registry: ghcr.io
       repository: headlamp-k8s/headlamp
 
-    config:
-      inCluster: true
-      inClusterContextName: "main"
+    clusterRoleBinding:
+      create: true
+      clusterRoleName: cluster-admin
 
     serviceAccount:
       create: true
