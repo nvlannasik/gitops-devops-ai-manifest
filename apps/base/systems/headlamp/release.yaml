@@ -46,7 +46,7 @@ spec:
         - host: headlamp.annasik.cloud
           paths:
             - path: /
-              type: Prefix
+              type: ImplementationSpecific
       tls:
         - secretName: headlamp-tls
           hosts:
