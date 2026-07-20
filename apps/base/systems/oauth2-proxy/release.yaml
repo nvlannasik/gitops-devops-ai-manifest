@@ -20,7 +20,7 @@ spec:
     createNamespace: true
   values:
     image:
-      repository: quay.io/oauth2-proxy/oauth2-proxy
+      repository: oauth2-proxy/oauth2-proxy
       pullPolicy: IfNotPresent
     service:
       type: ClusterIP
