@@ -30,6 +30,8 @@ spec:
       annotations:
         configmap.reloader.stakater.com/reload: oauth2-proxy
         secret.reloader.stakater.com/reload: oauth2-proxy
+      existingSecret: oauth2-proxy-secrets
+
     deploymentAnnotations:
       configmap.reloader.stakater.com/reload: oauth2-proxy
       secret.reloader.stakater.com/reload: oauth2-proxy
@@ -53,8 +55,6 @@ spec:
       cookie-domain: ".annasik.cloud"
       whitelist-domain: ".annasik.cloud"
       redirect-url: "https://headlamp.annasik.cloud/oauth2/callback"
-
-    existingSecret: oauth2-proxy-secrets
 
     extraVolumes:
       - name: allowed-emails
