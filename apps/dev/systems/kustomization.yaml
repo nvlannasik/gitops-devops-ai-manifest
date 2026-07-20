@@ -11,3 +11,4 @@ resources:
   - fluentbit
   - grafana
   - headlamp
+  - oauth2-proxy

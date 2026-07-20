@@ -1,0 +1,95 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: oauth2-proxy
+  namespace: flux-system
+spec:
+  targetNamespace: oauth2-proxy
+  chart:
+    spec:
+      chart: oauth2-proxy
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: oauth2-proxy
+      version: "10.7.0"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    image:
+      repository: quay.io/oauth2-proxy/oauth2-proxy
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      portNumber: 80
+      targetPort: 4180
+    config:
+      annotations:
+        configmap.reloader.stakater.com/reload: oauth2-proxy
+        secret.reloader.stakater.com/reload: oauth2-proxy
+    deploymentAnnotations:
+      configmap.reloader.stakater.com/reload: oauth2-proxy
+      secret.reloader.stakater.com/reload: oauth2-proxy
+    serviceAccount:
+      create: true
+      name: oauth2-proxy
+      automountServiceAccountToken: true
+    extraArgs:
+      provider: "oidc"
+      oidc-issuer-url: "https://www.linkedin.com/oauth"
+      insecure-oidc-skip-issuer-verification: "true"
+      insecure-oidc-skip-nonce: "true"
+      scope: "openid profile email"
+      authenticated-emails-file: "/etc/oauth2-proxy/emails.txt"
+      upstream: "static://202"
+      reverse-proxy: "true"
+      set-authorization-header: "true"
+      pass-access-token: "true"
+      cookie-secure: "true"
+      cookie-samesite: "lax"
+      cookie-domain: ".annasik.cloud"
+      whitelist-domain: ".annasik.cloud"
+      redirect-url: "https://headlamp.annasik.cloud/oauth2/callback"
+
+    existingSecret: oauth2-proxy-secrets
+
+    extraVolumes:
+      - name: allowed-emails
+        configMap:
+          name: oauth2-proxy-allowed-emails
+
+    extraVolumeMounts:
+      - name: allowed-emails
+        mountPath: /etc/oauth2-proxy
+        readOnly: true
+    metrics:
+      enabled: true
+      port: 44180
+      service:
+        appProtocol: http
+      serviceMonitor:
+        enabled: false
+    ingress:
+      enabled: true
+      pathType: Prefix
+      className: nginx
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      hosts:
+        - headlamp.annasik.cloud
+      path: /oauth2
+      pathType: Prefix
+      tls:
+        - secretName: headlamp-tls
+          hosts:
+            - headlamp.annasik.cloud
+    sessionStorage:
+      type: redis
+      redis:
+        clientType: standalone
+        standalone:
+          connectionUrl: redis://devops-agent-redis.devops-tools.svc.cluster.local:6379/2
