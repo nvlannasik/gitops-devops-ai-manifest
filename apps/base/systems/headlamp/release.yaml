@@ -61,7 +61,7 @@ spec:
       inCluster: true
       inClusterContextName: "main"
       # -- base url path at which headlamp should run
-      baseURL: "headlamp.annasik.cloud"
+      baseURL: "/"
 
     # resources:
     #   requests:
