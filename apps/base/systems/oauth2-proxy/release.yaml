@@ -90,5 +90,7 @@ spec:
       type: redis
       redis:
         clientType: standalone
+        existingSecret: oauth2-proxy-secrets
+        passwordKey: redis-password
         standalone:
-          connectionUrl: redis://inipassword@devops-agent-redis.devops-tools.svc.cluster.local:6379/2
+          connectionUrl: redis://devops-agent-redis.devops-tools.svc.cluster.local:6379/2
