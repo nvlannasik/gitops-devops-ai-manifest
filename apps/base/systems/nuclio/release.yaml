@@ -30,6 +30,19 @@ spec:
       containerBuilderKind: kaniko
       monitorDockerDeamon:
         enabled: false
+      ingress:
+        enabled: true
+        ingressClassName: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+          ingress.kubernetes.io/rewrite-target: /
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
+        hosts:
+          - nuclio.annasik.cloud
+        tls:
+          - secretName: nuclio-tls
+            hosts:
+              - nuclio.annasik.cloud
     autoscaler:
       enabled: true
       image:
