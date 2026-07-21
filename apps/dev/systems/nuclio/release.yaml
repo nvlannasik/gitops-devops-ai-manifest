@@ -1,0 +1,19 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nuclio
+  namespace: flux-system
+spec:
+  values:
+    controller:
+      image:
+        tag: "1.17.2-arm64"
+    dashboard:
+      image:
+        tag: "1.17.2-arm64"
+    autoscaler:
+      image:
+        tag: "1.17.2-arm64"
+    dlx:
+      image:
+        tag: "1.17.2-arm64"

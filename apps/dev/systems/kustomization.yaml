@@ -12,3 +12,4 @@ resources:
   - grafana
   - headlamp
   - oauth2-proxy
+  - nuclio

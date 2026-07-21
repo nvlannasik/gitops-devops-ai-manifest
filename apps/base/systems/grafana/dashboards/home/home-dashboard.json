@@ -47,7 +47,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<table style=\"border-collapse: collapse; width: 100%;\" border=\"1\">\r\n<tbody>\r\n<tr>\r\n<td style=\"width: 15%; text-align: center;\"><img src=\"https://cdn.prod.website-files.com/6673fcc09578f29ff518d91e/6694e3db785e92e599fa0f34_new%20logo%20white-p-500.png\" alt=\"\"/></td>\r\n<td style=\"width: 100%; text-align: center;\"><h1><strong>Welcome to Home Lab Environment Monitoring Dashboard</strong></h1></td>\r\n</tr>\r\n</tbody>\r\n</table>",
+        "content": "<table style=\"border-collapse: collapse; width: 100%;\" border=\"1\">\r\n<tbody>\r\n<tr>\r\n<td style=\"width: 15%; text-align: center;\"><img src=\"https://www.jenkins.io/images/logos/kubernetes-operator/kubernetes-operator.png\" alt=\"\"/></td>\r\n<td style=\"width: 100%; text-align: center;\"><h1><strong>Welcome to Home Lab Environment Monitoring Dashboard</strong></h1></td>\r\n</tr>\r\n</tbody>\r\n</table>",
         "mode": "html"
       },
       "pluginVersion": "11.3.1",

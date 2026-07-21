@@ -54,7 +54,7 @@ spec:
       storageClass: longhorn
       accessModes:
         - ReadWriteOnce
-      size: 2Gi
+      size: 20Gi
     dashboardProviders:
       dashboardproviders.yaml:
         apiVersion: 1

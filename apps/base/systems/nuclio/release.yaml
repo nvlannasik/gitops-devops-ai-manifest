@@ -1,0 +1,49 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nuclio
+  namespace: flux-system
+spec:
+  targetNamespace: nuclio
+  chart:
+    spec:
+      chart: nuclio
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: nuclio
+      version: "0.23.2"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    controller:
+      enabled: true
+      image:
+        repository: quay.io/nuclio/controller
+    dashboard:
+      enabled: true
+      image:
+        repository: quay.io/nuclio/dashboard
+    autoscaler:
+      enabled: true
+      image:
+        repository: quay.io/nuclio/autoscaler
+    dlx:
+      enabled: true
+      image:
+        repository: quay.io/nuclio/dlx
+
+    platform:
+      scaleToZero:
+        scalerInterval: 30s
+        readinessPollInterval: 3s
+        metricsClient:
+          kind: prometheusClient
+          url: http://monitoring-prometheus-server.monitoring.svc.cluster.local:9090
+        templates:
+          - name: "nuclio_processor_handled_events_total"
+            template: |-
+              sum(rate(nuclio_processor_handled_events_total{function="{{.Function}}"}[1m]))

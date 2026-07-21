@@ -24,3 +24,4 @@ resources:
   - ./helm/aws-rds-exporter.yaml
   - ./helm/main.yaml
   - ./helm/headlamp.yaml
+  - ./helm/nuclio.yaml

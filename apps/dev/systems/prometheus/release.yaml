@@ -11,6 +11,18 @@ spec:
         name: "prometheus"
         annotations: {}
 
+    scrapeConfigs:
+      prometheus:
+        enabled: false
+      kubernetes-api-servers:
+        enabled: false
+      kubernetes-nodes:
+        enabled: false
+      kubernetes-service-endpoints-slow:
+        enabled: false
+      kubernetes-service-endpoints:
+        enabled: false
+
     serverFiles:
       prometheus.yml:
         scrape_configs:
