@@ -27,6 +27,8 @@ spec:
       enabled: true
       image:
         repository: quay.io/nuclio/dashboard
+      monitorDockerDeamon:
+        enabled: false
     autoscaler:
       enabled: true
       image:
