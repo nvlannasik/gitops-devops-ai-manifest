@@ -39,6 +39,15 @@ spec:
         repository: quay.io/nuclio/dlx
 
     platform:
+      metrics:
+        sinks:
+          promPull:
+            kind: prometheusPull
+            url: :8090
+        system:
+          - promPull
+        functions:
+          - promPull
       scaleToZero:
         scalerInterval: 30s
         readinessPollInterval: 3s
