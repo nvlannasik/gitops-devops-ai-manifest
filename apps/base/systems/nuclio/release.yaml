@@ -38,6 +38,10 @@ spec:
       enabled: true
       image:
         repository: quay.io/nuclio/dlx
+    registry:
+      secretName: ghcr-creds
+      pushPullUrl: ghcr.io/nvlannasik
+      kind: offCluster
 
     platform:
       metrics:
