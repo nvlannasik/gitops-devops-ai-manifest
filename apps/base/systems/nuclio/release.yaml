@@ -27,6 +27,7 @@ spec:
       enabled: true
       image:
         repository: quay.io/nuclio/dashboard
+      containerBuilderKind: kaniko
       monitorDockerDeamon:
         enabled: false
     autoscaler:
