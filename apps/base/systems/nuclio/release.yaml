@@ -48,4 +48,4 @@ spec:
         templates:
           - name: "nuclio_processor_handled_events_total"
             template: |-
-              sum(rate(nuclio_processor_handled_events_total{function="{{.Function}}"}[1m]))
+              sum(rate(nuclio_processor_handled_events_total{function_name="{{ .Function.Name }}"}[1m]))
