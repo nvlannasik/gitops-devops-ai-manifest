@@ -55,7 +55,7 @@ spec:
         metricsClient:
           kind: prometheusClient
           url: http://monitoring-prometheus-server.monitoring.svc.cluster.local:9090
-        templates:
-          - name: "nuclio_processor_handled_events_total"
-            template: |-
-              sum(rate(nuclio_processor_handled_events_total[1m]))
+          templates:
+            - name: "nuclio_processor_handled_events_total"
+              template: |-
+                sum(rate(nuclio_processor_handled_events_total[1m]))
