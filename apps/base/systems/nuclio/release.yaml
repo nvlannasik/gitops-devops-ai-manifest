@@ -57,6 +57,7 @@ spec:
       kind: offCluster
 
     platform:
+      autoScaleMetricsMode: custom
       functionAugmentedConfigs:
         - labelSelector: {}
           kubernetes:
@@ -68,6 +69,13 @@ spec:
                       prometheus.io/scrape: "true"
                       prometheus.io/port: "8090"
                       prometheus.io/path: "/metrics"
+          functionConfig:
+            spec:
+              scaleToZero:
+                scaleResources:
+                  - metricName: "nuclio_processor_handled_events_total"
+                    windowSize: "1m"
+                    threshold: 0
       metrics:
         sinks:
           promPull:
@@ -82,8 +90,7 @@ spec:
         readinessPollInterval: 3s
         metricsClient:
           kind: prometheusClient
-          url: http://monitoring-prometheus-server.monitoring.svc.cluster.local:9090
+          url: http://monitoring-prometheus-server.monitoring.svc.cluster.local:80
           templates:
-            - name: "nuclio_processor_handled_events_total"
-              template: |-
-                sum(rate(nuclio_processor_handled_events_total[1m]))
+            - name: nuclio_processor_handled_events_total
+              template: sum by (function) (rate(nuclio_processor_handled_events_total[5m]))
