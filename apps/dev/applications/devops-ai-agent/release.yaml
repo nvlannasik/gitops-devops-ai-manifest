@@ -58,6 +58,12 @@ spec:
         value: "U0BGYRD1EPM"
       - name: DB_USERNAME
         value: "postgres"
+      - name: GITOPS_REMEDIATION_ENABLED
+        value: "true"
+      - name: SQS_GITOPS_REQUEST_QUEUE_NAME
+        value: "gitops-request.fifo"
+      - name: SQS_GITOPS_TIMEOUT_SECONDS
+        value: "240"
       - name: DB_PASSWORD
         valueFrom:
           secretKeyRef:

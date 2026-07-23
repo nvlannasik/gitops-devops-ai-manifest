@@ -31,6 +31,19 @@ spec:
         value: "16384"
       - name: LLM_USE_MAX_COMPLETION_TOKENS
         value: "true"
+      - name: GITOPS_REPO
+        value: "nvlannasik/gitops-devops-ai-manifest"
+      - name: GITHUB_API_URL
+        value: "https://api.github.com"
+      - name: GITOPS_BRANCH
+        value: "main"
+      - name: SQS_GITOPS_REQUEST_QUEUE_NAME
+        value: "gitops-request.fifo"
+      - name: GITHUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: github-token-secret
+            key: token
       - name: LLM_API_KEY
         valueFrom:
           secretKeyRef:
