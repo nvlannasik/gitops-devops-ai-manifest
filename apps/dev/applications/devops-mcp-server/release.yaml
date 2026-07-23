@@ -30,7 +30,7 @@ spec:
       - name: MCP_ENABLE_WRITE_TOOLS
         value: "true"
       - name: ALLOWED_REMEDIATION_NAMESPACES
-        value: "dev-auth,nginx-ingress,default"
+        value: "dev-auth,nginx-ingress,default,monitoring,headlamp"
       - name: MAX_SCALE_DELTA
         value: "5"
       - name: TRACING_BACKEND
