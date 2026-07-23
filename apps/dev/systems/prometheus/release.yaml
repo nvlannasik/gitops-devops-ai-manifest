@@ -5,6 +5,10 @@ metadata:
   namespace: flux-system
 spec:
   values:
+    server:
+      replicaCount: 1
+      image:
+        tag: "v3.13.0"
     serviceAccounts:
       server:
         create: true
