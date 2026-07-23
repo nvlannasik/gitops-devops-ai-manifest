@@ -6,7 +6,7 @@ metadata:
 spec:
   values:
     server:
-      replicaCount: 2
+      replicaCount: 1
       image:
         tag: "v3.13.0"
     serviceAccounts:
