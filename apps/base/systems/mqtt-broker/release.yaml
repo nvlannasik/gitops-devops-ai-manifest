@@ -32,6 +32,7 @@ spec:
     nameOverride: "mqtt-broker"
     service:
       type: ClusterIP
+      externalTrafficPolicy: null
       ports:
         mqtt:
           port: 1883
