@@ -29,7 +29,9 @@ spec:
       enabled: true
       rootUser:
         - "root-user"
-      username:
+      usernames:
+        - "sarang-tani"
+      databases:
         - "sarang-tani"
       existingSecret: mongodb-secret
       
