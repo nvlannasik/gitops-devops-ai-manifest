@@ -7,7 +7,7 @@ spec:
   targetNamespace: mongodb
   chart:
     spec:
-      chart: bitnami/mongodb
+      chart: mongodb
       reconcileStrategy: Revision
       sourceRef:
         kind: HelmRepository

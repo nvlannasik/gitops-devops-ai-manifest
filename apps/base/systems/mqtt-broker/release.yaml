@@ -7,7 +7,7 @@ spec:
   targetNamespace: mqtt-broker
   chart:
     spec:
-      chart: t3n/mosquitto
+      chart: mosquitto
       reconcileStrategy: Revision
       sourceRef:
         kind: HelmRepository
