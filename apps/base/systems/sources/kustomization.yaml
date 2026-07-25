@@ -25,3 +25,4 @@ resources:
   - ./helm/main.yaml
   - ./helm/headlamp.yaml
   - ./helm/nuclio.yaml
+  - ./helm/mosquitto.yaml

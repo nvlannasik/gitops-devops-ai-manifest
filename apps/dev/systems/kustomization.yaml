@@ -12,4 +12,6 @@ resources:
   - grafana
   - headlamp
   - oauth2-proxy
-  - nuclio
+  # - nuclio
+  - mongodb
+  - mqtt-broker

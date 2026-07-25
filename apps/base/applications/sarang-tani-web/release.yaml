@@ -1,0 +1,48 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sarang-tani-web
+  namespace: flux-app
+spec:
+  targetNamespace: sarang-tani
+  chart:
+    spec:
+      chart: main
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: github
+        namespace: flux-system
+  interval: 1m
+  install:
+    remediation:
+      retries: 3
+  values:
+    nameOverride: sarang-tani-web
+    fullnameOverride: sarang-tani-web
+    commonLabels:
+      app: sarang-tani-web
+    image:
+      repository: nvlannasik/sarang-tani-web
+      registry: docker.io
+    containerPorts:
+      - name: main
+        containerPort: 3009
+    service:
+      ports:
+        - name: http
+          port: 3009
+          protocol: TCP
+          targetPort: 3009
+    commonAnnotations:
+      configmap.reloader.stakater.com/reload: sarang-tani-web-configmap
+      secret.reloader.stakater.com/reload: sarang-tani-web-external-secret
+    ingress:
+      enabled: true
+    resources: {}
+    externalSecret:
+      enabled: false
+    serviceAccount:
+      create: true
+      name: "sarang-tani-web"
+      automountServiceAccountToken: true

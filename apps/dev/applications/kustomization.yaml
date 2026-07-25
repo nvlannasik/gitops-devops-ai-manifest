@@ -4,3 +4,5 @@ resources:
   - devops-ai-agent
   - devops-mcp-server
   - devops-llm-worker
+  - sarang-tani-api
+  - sarang-tani-web

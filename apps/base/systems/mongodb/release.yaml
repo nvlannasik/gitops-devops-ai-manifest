@@ -1,0 +1,40 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mongodb
+  namespace: flux-system
+spec:
+  targetNamespace: mongodb
+  chart:
+    spec:
+      chart: bitnami/mongodb
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+      version: "19.1.20"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    architecture: standalone
+    image:
+      registry: registry-1.docker.io
+      repository: bitnami/mongodb
+    fullnameOverride: "mongodb"
+    nameOverride: "mongodb"
+    auth:
+      enabled: true
+      rootUser: mongodb
+      username: mongodbuser
+      existingSecret: mongodb-secret
+      
+    persistence:
+      enabled: true
+      storageClass: "longhorn"
+      size: 4Gi
+
+    service:
+      type: ClusterIP

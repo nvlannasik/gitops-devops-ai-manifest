@@ -1,0 +1,58 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sarang-tani-api
+  namespace: flux-app
+spec:
+  chart:
+    spec:
+      version: 1.0.1
+  values:
+    image:
+      tag: latest
+    extraEnvVars:
+      - name: MONGODB_URI
+        value: "mongodb://mongodbuser:$(MONGODB_PASSWORD)@mongodb.mongodb.svc.cluster.local:27017/sarang-tani?authSource=admin"
+      - name: MQTT_BROKER_URL
+        value: "mqtt://mosquitto.mqtt-broker.svc.cluster.local:1883"
+      - name: MQTT_USERNAME
+        value: "sarang-tani-api"
+      - name: MQTT_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: sarang-tani-api-secret
+            key: MQTT_PASSWORD
+      - name: JWT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: sarang-tani-api-secret
+            key: JWT_SECRET
+      - name: MONGODB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: sarang-tani-api-secret
+            key: MONGODB_PASSWORD
+    secret:
+      enabled: false
+    replicaCount: 1
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    loggingOperator:
+      enabled: false
+    secretStore:
+      enabled: false
+    resources: {}
+    ingress:
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        ingress.kubernetes.io/rewrite-target: /
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      hostname: api.sarang-tani.annasik.cloud
+      apiVersion: "networking.k8s.io/v1"
+      pathType: Prefix
+      path: /
+
+

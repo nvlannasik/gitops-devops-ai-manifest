@@ -1,0 +1,67 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mqtt-broker
+  namespace: flux-system
+spec:
+  targetNamespace: mqtt-broker
+  chart:
+    spec:
+      chart: t3n/mosquitto
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: mosquitto
+      version: "2.4.1"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    replicaCount: 1
+    strategyType: Recreate
+    image:
+      repository: eclipse-mosquitto
+    fullnameOverride: "mqtt-broker"
+    nameOverride: "mqtt-broker"
+    service:
+      type: ClusterIP
+      ports:
+        mqtt:
+          port: 1883
+        websocket:
+          port: 9090
+    persistence:
+      enabled: true
+      accessMode: ReadWriteOnce
+      storageClass: "longhorn"
+      size: 2Gi
+
+
+    config: |
+      persistence true
+      persistence_location /mosquitto/data/
+      log_dest stdout
+      listener 1883
+      allow_anonymous false
+      password_file /mosquitto/config/passwd
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+    extraVolumes:
+      - name: mosquitto-passwd
+        secret:
+          secretName: mosquitto-passwd
+
+    extraVolumeMounts:
+      - name: mosquitto-passwd
+        mountPath: /mosquitto/config/passwd
+        subPath: passwd
+        readOnly: true
