@@ -18,6 +18,11 @@ spec:
     remediation:
       retries: 3
     createNamespace: true
+  valuesFrom:
+    - kind: Secret
+      name: mqtt-broker-auth
+      valuesKey: passwordEntries
+      targetPath: authentication.passwordEntries
   values:
     replicaCount: 1
     strategyType: Recreate
@@ -27,7 +32,6 @@ spec:
     nameOverride: "mqtt-broker"
     service:
       type: ClusterIP
-      externalTrafficPolicy: null
       ports:
         mqtt:
           port: 1883
@@ -38,16 +42,17 @@ spec:
       accessMode: ReadWriteOnce
       storageClass: "longhorn"
       size: 2Gi
-
-
+    authentication:
+      passwordFilePath: "/etc/mosquitto/passwordfile"
     config: |
       persistence true
       persistence_location /mosquitto/data/
       log_dest stdout
       listener 1883
       allow_anonymous false
-      password_file /mosquitto/config/passwd
-
+      password_file /etc/mosquitto/passwordfile
+      listener 9090
+      protocol websockets
     resources:
       requests:
         cpu: 50m
@@ -55,32 +60,3 @@ spec:
       limits:
         cpu: 200m
         memory: 128Mi
-
-    extraVolumes:
-      - name: mosquitto-passwd-secret
-        secret:
-          secretName: mosquitto-passwd
-      - name: mosquitto-passwd-writable
-        emptyDir: {}
-
-    extraInitContainers:
-      - name: fix-passwd-permissions
-        image: busybox:1.36
-        command:
-          - sh
-          - -c
-          - |
-            cp /secret-passwd/passwd /writable-passwd/passwd
-            chown 1883:1883 /writable-passwd/passwd
-            chmod 0700 /writable-passwd/passwd
-        volumeMounts:
-          - name: mosquitto-passwd-secret
-            mountPath: /secret-passwd
-          - name: mosquitto-passwd-writable
-            mountPath: /writable-passwd
-
-    extraVolumeMounts:
-      - name: mosquitto-passwd-writable
-        mountPath: /mosquitto/config/passwd
-        subPath: passwd
-        readOnly: true
