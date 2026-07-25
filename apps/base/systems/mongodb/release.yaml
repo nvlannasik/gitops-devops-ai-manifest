@@ -27,8 +27,10 @@ spec:
     nameOverride: "mongodb"
     auth:
       enabled: true
-      rootUser: root-user
-      username: sarang-tani
+      rootUser:
+        - "root-user"
+      username:
+        - "sarang-tani"
       existingSecret: mongodb-secret
       
     persistence:
