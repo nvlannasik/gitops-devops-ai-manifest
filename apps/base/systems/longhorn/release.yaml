@@ -19,6 +19,11 @@ spec:
       retries: 3
     createNamespace: true
   values:
+    nameOverride: "longhorn"
+    fullnameOverride: "longhorn"
+    serviceAccount:
+      create: true
+      name: longhorn
     longhornManager:
       priorityClass: system-node-critical
       resources:
