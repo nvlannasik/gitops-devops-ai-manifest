@@ -82,7 +82,7 @@ spec:
     persistentVolumeClaim:
       accessModes:
         - ReadWriteOnce
-      enabled: false
+      enabled: true
       size: 1Gi
     volumeMounts:
       - mountPath: /build/plugins
