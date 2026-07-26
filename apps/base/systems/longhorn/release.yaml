@@ -1,0 +1,65 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: flux-system
+spec:
+  targetNamespace: longhorn
+  chart:
+    spec:
+      chart: longhorn
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+      version: "1.12.0"
+  interval: 5m0s
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  values:
+    longhornManager:
+      priorityClass: system-node-critical
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+
+    longhornDriver:
+      priorityClass: system-node-critical
+
+    longhornUI:
+      replicas: 1
+
+    csi:
+      attacherReplicaCount: 1
+      provisionerReplicaCount: 1
+      resizerReplicaCount: 1
+      snapshotterReplicaCount: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+
+    defaultSettings:
+      guaranteedInstanceManagerCPU: 12
+      defaultDataPath: /var/lib/longhorn
+      defaultReplicaCount: 2
+      replicaSoftAntiAffinity: false
+      concurrentReplicaRebuildPerNodeLimit: 1
+      concurrentAutomaticEngineUpgradePerNodeLimit: 0
+      v2DataEngine: false
+      disableRevisionCounter: true
+      snapshotDataIntegrity: fast-check
+      snapshotDataIntegrityCronjob: "0 3 * * *"
+      storageOverProvisioningPercentage: 100
+      storageMinimalAvailablePercentage: 20
+
+      autoSalvage: true
+      nodeDownPodDeletionPolicy: do-nothing
+      backupstorePollInterval: 300
