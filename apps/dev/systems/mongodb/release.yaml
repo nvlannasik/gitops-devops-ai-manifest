@@ -6,4 +6,4 @@ metadata:
 spec:
   values:
     image:
-      tag: "4.4"
+      tag: "latest"
