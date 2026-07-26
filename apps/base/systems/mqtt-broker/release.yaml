@@ -39,10 +39,7 @@ spec:
         websocket:
           port: 9090
     persistence:
-      enabled: true
-      accessMode: ReadWriteOnce
-      storageClass: "longhorn"
-      size: 2Gi
+      enabled: false
     authentication:
       passwordFilePath: "/etc/mosquitto/passwordfile"
     config: |
