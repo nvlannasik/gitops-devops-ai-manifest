@@ -3,4 +3,4 @@ kind: Kustomization
 namespace: flux-system
 resources:
   - release.yaml
-  - worker1-sdcard.yaml
+  # - worker1-sdcard.yaml
