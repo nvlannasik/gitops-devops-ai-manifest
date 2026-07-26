@@ -4,7 +4,7 @@ metadata:
   name: longhorn
   namespace: flux-system
 spec:
-  targetNamespace: longhorn
+  targetNamespace: longhorn-system
   chart:
     spec:
       chart: longhorn
