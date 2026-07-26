@@ -27,8 +27,7 @@ spec:
     nameOverride: "mongodb"
     auth:
       enabled: true
-      rootUser:
-        - "root-user"
+      rootUser: "root-user"
       usernames:
         - "sarang-tani"
       databases:
