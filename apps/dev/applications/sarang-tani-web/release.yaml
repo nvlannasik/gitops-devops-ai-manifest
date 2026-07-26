@@ -12,9 +12,9 @@ spec:
       tag: latest
     extraEnvVars:
       - name: NEXT_PUBLIC_API_URL
-        value: "http://api.sarang-tani.annasik.cloud"
+        value: "http://api-sarang-tani.annasik.cloud"
       - name: NEXT_PUBLIC_SOCKET_URL
-        value: "http://api.sarang-tani.annasik.cloud"
+        value: "http://api-sarang-tani.annasik.cloud"
     secret:
       enabled: false
     replicaCount: 1
