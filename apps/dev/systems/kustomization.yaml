@@ -13,6 +13,6 @@ resources:
   - headlamp
   - oauth2-proxy
   # - nuclio
-  - mongodb
+  # - mongodb
   - mqtt-broker
   - longhorn

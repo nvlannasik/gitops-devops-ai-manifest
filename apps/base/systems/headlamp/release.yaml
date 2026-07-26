@@ -81,7 +81,7 @@ spec:
             name: headlamp-plugins
     persistentVolumeClaim:
       accessModes:
-        - ReadWriteMany
+        - ReadWriteOnce
       enabled: true
       size: 1Gi
       storageClassName: "longhorn"
