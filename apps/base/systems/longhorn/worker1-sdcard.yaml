@@ -1,0 +1,23 @@
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: worker1
+  namespace: longhorn-system
+spec:
+  allowScheduling: true
+  disks:
+    default-disk-778b58bacffb8220:
+      allowScheduling: false
+      evictionRequested: true
+      diskType: filesystem
+      path: /var/lib/longhorn
+      storageReserved: 0
+      tags: []
+    sdcard-storage:
+      allowScheduling: true
+      evictionRequested: false
+      diskType: filesystem
+      path: /mnt/longhorn-data
+      storageReserved: 5368709120
+      tags:
+        - external
