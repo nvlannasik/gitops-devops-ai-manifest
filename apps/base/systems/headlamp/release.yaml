@@ -76,21 +76,21 @@ spec:
           privileged: false
           runAsUser: 0
           runAsGroup: 0
-    #     volumeMounts:
-    #       - mountPath: /build/plugins
-    #         name: headlamp-plugins
-    # persistentVolumeClaim:
-    #   accessModes:
-    #     - ReadWriteOnce
-    #   enabled: false
-    #   size: 1Gi
-    # volumeMounts:
-    #   - mountPath: /build/plugins
-    #     name: headlamp-plugins
-    # volumes:
-    #   - name: headlamp-plugins
-    #     persistentVolumeClaim:
-    #       claimName: headlamp
+        volumeMounts:
+          - mountPath: /build/plugins
+            name: headlamp-plugins
+    persistentVolumeClaim:
+      accessModes:
+        - ReadWriteOnce
+      enabled: false
+      size: 1Gi
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+    volumes:
+      - name: headlamp-plugins
+        persistentVolumeClaim:
+          claimName: headlamp
 
     # resources:
     #   requests:
