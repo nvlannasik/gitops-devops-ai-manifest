@@ -72,11 +72,11 @@ spec:
         size: 10Gi
       resources:
         requests:
-          cpu: 100m
-          memory: 192Mi
+          cpu: 50m
+          memory: 64Mi
         limits:
-          cpu: 500m
-          memory: 384Mi
+          cpu: 254m
+          memory: 254Mi
 
     backend:
       replicas: 0

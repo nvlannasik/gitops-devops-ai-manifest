@@ -28,3 +28,10 @@ spec:
     #   existingSecret: "postgresql-secret"
     containerPorts:
       postgresql: 5432
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
