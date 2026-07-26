@@ -12,7 +12,7 @@ spec:
       tag: latest
     extraEnvVars:
       - name: MONGODB_URI
-        value: "mongodb://mongodbuser:$(MONGODB_PASSWORD)@mongodb.mongodb.svc.cluster.local:27017/sarang-tani?authSource=admin"
+        value: "mongodb://smartfarming:$(MONGODB_PASSWORD)@152.42.243.23:27017/smart-farming?authSource=admin"
       - name: MQTT_BROKER_URL
         value: "mqtt://mosquitto.mqtt-broker.svc.cluster.local:1883"
       - name: MQTT_USERNAME
@@ -54,5 +54,6 @@ spec:
       apiVersion: "networking.k8s.io/v1"
       pathType: Prefix
       path: /
-
+      tls: true
+      selfSigned: true
 
