@@ -12,7 +12,7 @@ spec:
       tag: latest
     extraEnvVars:
       - name: MONGODB_URI
-        value: "mongodb://smartfarming:$(MONGODB_PASSWORD)@152.42.243.23:27017/smart-farming?authSource=admin"
+        value: "mongodb+srv://smartfarming:$(MONGODB_PASSWORD)@cluster0.pjs5phw.mongodb.net/smart-farming?authSource=admin&retryWrites=true&w=majority"
       - name: MQTT_BROKER_URL
         value: "mqtt://mosquitto.mqtt-broker.svc.cluster.local:1883"
       - name: MQTT_USERNAME
