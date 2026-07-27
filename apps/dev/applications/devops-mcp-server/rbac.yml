@@ -52,9 +52,13 @@ rules:
     resources: ["customresourcedefinitions"]
     verbs: ["list", "get"]
 
+  # patch is required by the flux_reconcile write tool: it annotates the HelmRelease with
+  # reconcile.fluxcd.io/{requestedAt,forceAt} to make Flux re-apply the repo's declared
+  # state after someone changed the cluster directly. It only ever RESTORES what Git says —
+  # spec.values are never written here (those go through a PR).
   - apiGroups: ["helm.toolkit.fluxcd.io"]
     resources: ["helmreleases"]
-    verbs: ["get"]
+    verbs: ["get", "patch"]
   - apiGroups: ["kustomize.toolkit.fluxcd.io"]
     resources: ["kustomizations"]
     verbs: ["get"]
