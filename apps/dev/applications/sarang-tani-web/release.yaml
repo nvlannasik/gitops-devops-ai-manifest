@@ -12,9 +12,9 @@ spec:
       tag: latest
     extraEnvVars:
       - name: NEXT_PUBLIC_API_URL
-        value: "http://api-sarang-tani.annasik.cloud"
+        value: "https://apisarangtani.sutansolusi.com"
       - name: NEXT_PUBLIC_SOCKET_URL
-        value: "http://api-sarang-tani.annasik.cloud"
+        value: "https://apisarangtani.sutansolusi.com"
     secret:
       enabled: false
     replicaCount: 1
@@ -33,7 +33,7 @@ spec:
         cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
         ingress.kubernetes.io/rewrite-target: /
         nginx.ingress.kubernetes.io/ssl-redirect: "false"
-      hostname: web-sarang-tani.annasik.cloud
+      hostname: sarangtani.sutansolusi.com
       apiVersion: "networking.k8s.io/v1"
       pathType: Prefix
       path: /
