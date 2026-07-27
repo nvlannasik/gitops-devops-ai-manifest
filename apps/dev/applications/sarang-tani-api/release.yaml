@@ -11,10 +11,8 @@ spec:
     image:
       tag: latest
     extraEnvVars:
-      - name: MONGODB_URI
-        value: "mongodb+srv://smartfarming:$(MONGODB_PASSWORD)@cluster0.pjs5phw.mongodb.net/smart-farming?authSource=admin&retryWrites=true&w=majority"
       - name: MQTT_BROKER_URL
-        value: "mqtt://mosquitto.mqtt-broker.svc.cluster.local:1883"
+        value: "mqtt://mqtt-broker.mqtt-broker.svc.cluster.local:1883"
       - name: MQTT_USERNAME
         value: "sarang-tani-api"
       - name: MQTT_PASSWORD
@@ -27,11 +25,11 @@ spec:
           secretKeyRef:
             name: sarang-tani-api-secret
             key: JWT_SECRET
-      - name: MONGODB_PASSWORD
+      - name: MONGODB_URI
         valueFrom:
           secretKeyRef:
             name: sarang-tani-api-secret
-            key: MONGODB_PASSWORD
+            key: MONGODB_URI
     secret:
       enabled: false
     replicaCount: 1

@@ -64,6 +64,11 @@ spec:
         value: "gitops-request.fifo"
       - name: SQS_GITOPS_TIMEOUT_SECONDS
         value: "240"
+      - name: ALERT_WEBHOOK_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: devops-agent-secret
+            key: ALERT_WEBHOOK_TOKEN
       - name: DB_PASSWORD
         valueFrom:
           secretKeyRef:

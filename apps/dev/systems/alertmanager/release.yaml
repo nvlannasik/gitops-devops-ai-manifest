@@ -36,6 +36,9 @@ spec:
           webhook_configs:
             - url: http://devops-ai-agent.devops-tools:3000/alert
               send_resolved: true
+              http_config:
+                authorization:       
+                  credentials_file: /etc/alertmanager/secrets/webhook-token
 
       route:
         group_by: ["alertname", "namespace"]
