@@ -7,8 +7,8 @@ resources:
   # - cert-manager
   - alertmanager
   - postgres
-  # - loki
-  # - fluentbit
+  - loki
+  - fluentbit
   - grafana
   - headlamp
   - oauth2-proxy

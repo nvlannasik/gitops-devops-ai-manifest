@@ -23,6 +23,8 @@ spec:
         value: "10"
       - name: AWS_REGION
         value: "ap-southeast-1"
+      - name: LLM_API_FORMAT
+        value: openai
       - name: LLM_BASE_URL
         value: "https://api.openai.com/v1"
       - name: LLM_MODEL
