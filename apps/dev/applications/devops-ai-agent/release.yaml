@@ -43,7 +43,7 @@ spec:
       - name: LLM_ROUTE_HEAVY
         value: sonnet,chatgpt
       - name: LLM_ROUTE_LIGHT
-        value: deepseek,chatgpt
+        value: deepseek
       - name: MCP_TRANSPORT
         value: "http"
       - name: MCP_HTTP_URL
