@@ -9,7 +9,7 @@ spec:
       version: 1.0.1
   values:
     image:
-      tag: latest
+      tag: f95aa236baf239013b864ed33d3cd3b1fc24b690
     extraEnvVars:
       - name: NEXT_PUBLIC_API_URL
         value: "https://apisarangtani.sutansolusi.com"
@@ -39,5 +39,3 @@ spec:
       path: /
       tls: true
       selfSigned: true
-
-
