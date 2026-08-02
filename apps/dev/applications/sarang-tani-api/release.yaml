@@ -9,7 +9,7 @@ spec:
       version: 1.0.1
   values:
     image:
-      tag: df12549b684c1461d8f90a2762d4f361d33fb087
+      tag: edb935cc83027c74434833f8543b5d862cee8c2e
     extraEnvVars:
       - name: MQTT_BROKER_URL
         value: "mqtt://mqtt-broker.mqtt-broker.svc.cluster.local:1883"
