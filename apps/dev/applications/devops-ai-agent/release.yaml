@@ -41,7 +41,7 @@ spec:
       - name: LLM_BACKEND_3_MODEL
         value: deepseek-v4-flash
       - name: LLM_ROUTE_HEAVY
-        value: sonnet,chatgpt
+        value: chatgpt,haiku
       - name: LLM_ROUTE_LIGHT
         value: deepseek
       - name: MCP_TRANSPORT
