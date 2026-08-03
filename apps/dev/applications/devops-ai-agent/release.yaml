@@ -70,6 +70,12 @@ spec:
         value: "false"
       - name: MAX_CONCURRENT_INVESTIGATIONS
         value: "5"
+      # Read-only dashboard on its own port. NO Ingress rule for 3001 — that absence is
+      # the access control. See devops-ai-agent/docs/superpowers/specs/2026-08-03-dashboard-design.md §3.1
+      - name: DASHBOARD_ENABLED
+        value: "true"
+      - name: DASHBOARD_PORT
+        value: "3001"
       - name: SLACK_ALERT_CHANNEL
         value: "C09R0F6F891"
       - name: SLACK_ONCALL_USERS
