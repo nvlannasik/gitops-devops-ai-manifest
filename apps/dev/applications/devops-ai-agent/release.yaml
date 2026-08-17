@@ -19,11 +19,11 @@ spec:
       - name: LLM_PROVIDER
         value: "router"
       - name: LLM_BACKEND_1_NAME
-        value: sonnet
+        value: haiku
       - name: LLM_BACKEND_1_KIND
         value: claude
       - name: LLM_BACKEND_1_MODEL
-        value: claude-sonnet-5
+        value: claude-haiku-4-5
       - name: LLM_BACKEND_2_NAME
         value: chatgpt
       - name: LLM_BACKEND_2_KIND
