@@ -40,8 +40,12 @@ spec:
         value: "https://api.deepseek.com"
       - name: LLM_BACKEND_3_MODEL
         value: deepseek-v4-flash
+      - name: LLM_BACKEND_4_NAME
+        value: private-llm
+      - name: LLM_BACKEND_4_KIND
+        value: private-llm
       - name: LLM_ROUTE_HEAVY
-        value: chatgpt,haiku
+        value: private-llm,chatgpt,haiku
       - name: LLM_ROUTE_LIGHT
         value: deepseek
       - name: MCP_TRANSPORT
@@ -70,6 +74,10 @@ spec:
         value: "false"
       - name: MAX_CONCURRENT_INVESTIGATIONS
         value: "5"
+      - name: DASHBOARD_ENABLED
+        value: "true"
+      - name: DASHBOARD_PORT
+        value: "3001"
       - name: SLACK_ALERT_CHANNEL
         value: "C09R0F6F891"
       - name: SLACK_ONCALL_USERS
@@ -139,6 +147,12 @@ spec:
           secretKeyRef:
             name: devops-agent-secret
             key: REDIS_PASSWORD
+      - name: DASHBOARD_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: devops-agent-secret
+            key: DASHBOARD_PASSWORD
+            optional: true
       - name: AWS_TRUST_ANCHOR_ARN
         valueFrom:
           secretKeyRef:
