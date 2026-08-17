@@ -70,8 +70,6 @@ spec:
         value: "false"
       - name: MAX_CONCURRENT_INVESTIGATIONS
         value: "5"
-      # Read-only dashboard on its own port. NO Ingress rule for 3001 — that absence is
-      # the access control. See devops-ai-agent/docs/superpowers/specs/2026-08-03-dashboard-design.md §3.1
       - name: DASHBOARD_ENABLED
         value: "true"
       - name: DASHBOARD_PORT
@@ -145,6 +143,12 @@ spec:
           secretKeyRef:
             name: devops-agent-secret
             key: REDIS_PASSWORD
+      - name: DASHBOARD_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: devops-agent-secret
+            key: DASHBOARD_PASSWORD
+            optional: true
       - name: AWS_TRUST_ANCHOR_ARN
         valueFrom:
           secretKeyRef:
