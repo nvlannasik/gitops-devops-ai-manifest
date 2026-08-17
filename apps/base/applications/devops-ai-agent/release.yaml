@@ -17,6 +17,15 @@ spec:
   install:
     remediation:
       retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+    ignore:
+    - paths: ["/spec/replicas"]
+      target:
+        kind: Deployment
   values:
     nameOverride: devops-ai-agent
     fullnameOverride: devops-ai-agent
@@ -34,7 +43,7 @@ spec:
           port: 3000
           protocol: TCP
           targetPort: 3000
-    kubeVersion: "1.33.0"
+    kubeVersion: "1.36.2"
     commonAnnotations:
       configmap.reloader.stakater.com/reload: devops-ai-agent-external-secret
       secret.reloader.stakater.com/reload: devops-ai-agent-external-secret
