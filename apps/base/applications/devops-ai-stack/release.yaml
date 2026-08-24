@@ -44,7 +44,7 @@ spec:
           profileArnKey: "profile-arn"
           roleArnKey: "role-arn"
         certificate:
-          create: true
+          create: false
           secretName: "workload-tls"
           mountPath: "/certs"
           name: "workload-cert"
