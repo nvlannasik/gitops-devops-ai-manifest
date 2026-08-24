@@ -26,6 +26,9 @@ spec:
     - paths: ["/spec/replicas"]
       target:
         kind: Deployment
+    - paths: ["/spec/template/spec/containers/0/image"]
+      target:
+        kind: Deployment
   values:
     nameOverride: sarang-tani-web
     fullnameOverride: sarang-tani-web
