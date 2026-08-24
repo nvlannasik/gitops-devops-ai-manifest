@@ -67,6 +67,7 @@ spec:
       image:
         registry: docker.io
         repository: nvlannasik/devops-ai-agent
+        pullPolicy: Always
 
       commonAnnotations:
         configmap.reloader.stakater.com/reload: devops-agent-secret
@@ -187,6 +188,7 @@ spec:
       image:
         registry: docker.io
         repository: nvlannasik/devops-mcp-server
+        pullPolicy: Always
 
       mcp:
         transport: "http"
@@ -246,6 +248,8 @@ spec:
       image:
         registry: docker.io
         repository: nvlannasik/llm-worker
+        pullPolicy: Always
+
       llm:
         apiFormat: "openai"
         baseUrl: "https://api.openai.com/v1"
