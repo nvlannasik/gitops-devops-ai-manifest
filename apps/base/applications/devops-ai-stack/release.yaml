@@ -291,10 +291,6 @@ spec:
 
     redis:
       namespaceOverride: "redis"
-      image:
-        registry: registry-1.docker.io
-        repository: bitnami/redis
-        tag: latest
       architecture: standalone
       auth:
         enabled: true
