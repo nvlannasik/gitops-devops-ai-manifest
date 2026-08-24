@@ -1,8 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - devops-ai-agent
-  - devops-mcp-server
-  - devops-llm-worker
+  # - devops-ai-agent
+  # - devops-mcp-server
+  # - devops-llm-worker
   - sarang-tani-api
   - sarang-tani-web
