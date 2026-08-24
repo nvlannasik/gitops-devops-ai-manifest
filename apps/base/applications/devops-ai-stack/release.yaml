@@ -292,6 +292,7 @@ spec:
 
     redis:
       namespaceOverride: "redis"
+      fullnameOverride: "redis"
       architecture: standalone
       auth:
         enabled: true
