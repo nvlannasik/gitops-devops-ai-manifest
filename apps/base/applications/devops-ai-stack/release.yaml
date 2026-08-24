@@ -274,3 +274,10 @@ spec:
         requests:
           cpu: 128m
           memory: 64Mi
+
+      extraVolumes:
+        - name: tmp
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: tmp
+          mountPath: /tmp
