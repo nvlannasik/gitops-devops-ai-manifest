@@ -26,6 +26,7 @@ spec:
 
       env:
         NODE_ENV: "dev"
+        INCIDENT_RECONCILE_ENABLED: "true"
 
       ingress:
         annotations: 
