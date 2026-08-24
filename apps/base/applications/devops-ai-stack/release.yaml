@@ -151,7 +151,12 @@ spec:
         passwordKey: "DASHBOARD_PASSWORD"
 
       env: {}
-
+      extraVolumes:
+        - name: tmp
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: tmp
+          mountPath: /tmp
       ingress:
         enabled: true
         className: "nginx"
@@ -240,7 +245,7 @@ spec:
       enabled: true
       image:
         registry: docker.io
-        repository: nvlannasik/devops-llm-worker
+        repository: nvlannasik/llm-worker
       llm:
         apiFormat: "openai"
         baseUrl: "https://api.openai.com/v1"
@@ -269,4 +274,3 @@ spec:
         requests:
           cpu: 128m
           memory: 64Mi
-
