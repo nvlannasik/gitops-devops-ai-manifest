@@ -63,6 +63,7 @@ spec:
             - client auth
       redis:
         enabled: true
+        fullnameOverride: "redis"
 
     devops-ai-agent:
       enabled: true
