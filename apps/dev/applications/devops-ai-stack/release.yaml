@@ -1,0 +1,64 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: devops-ai-stack
+  namespace: flux-app
+spec:
+  values:
+    devops-ai-agent:
+      image:
+        tag: latest
+
+      mcp:
+        authTokenSecret:
+          name: devops-agent-secret
+          key: DASHBOARD_PASSWORD
+
+      slack:
+        alertChannel: "C09R0F6F891"
+        oncallUsers: ["U03RCHDHUH5"]
+        approverUsers: ["U0BGYRD1EPM"]
+
+      llm:
+        routes:
+          heavy: [private-llm, chatgpt, haiku]
+          light: [deepseek]
+
+      env:
+        NODE_ENV: "dev"
+        CERT_PATH: "/certs/tls.crt"
+        CERT_KEY_PATH: "/certs/tls.key"
+
+      ingress:
+        annotations: 
+          cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+          ingress.kubernetes.io/rewrite-target: /
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
+        hosts: 
+          - host: agent.annasik.cloud
+            paths:
+              - path: /
+                pathType: Prefix
+                port: 3001
+        tls: 
+          - hosts: 
+              - agent.annasik.cloud
+            secretName: ai-agent-tls
+
+    devops-mcp-server:
+      image:
+        tag: latest
+
+    devops-llm-worker:
+      serviceAccount:
+        create: true
+        name: devops-llm-worker
+
+      env:
+        NODE_ENV: "dev"
+        CERT_PATH: "/certs/tls.crt"
+        CERT_KEY_PATH: "/certs/tls.key"
+
+
+      image:
+        tag: latest

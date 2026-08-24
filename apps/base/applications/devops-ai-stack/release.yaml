@@ -1,0 +1,271 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: devops-ai-stack
+  namespace: flux-app
+spec:
+  targetNamespace: devops-tools
+  chart:
+    spec:
+      chart: devops-ai-stack
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: github
+        namespace: flux-system
+      version: "v0.1.0"
+  interval: 1m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+    ignore:
+    - paths: ["/spec/replicas"]
+      target:
+        kind: Deployment
+  values:
+    global:
+      sqs:
+        requestQueue: "llm-request.fifo"
+        responseQueue: "llm-response.fifo"
+        requestDlq: "llm-request-dlq.fifo"
+        gitopsRequestQueue: "gitops-request.fifo"
+      aws:
+        region: "ap-southeast-1"
+        authMode: "iam-anywhere"
+        rolesAnywhere:
+          configSecret:
+            name: aws-rolesanywhere-config
+          trustAnchorArnKey: "trust-anchor-arn"
+          profileArnKey: "profile-arn"
+          roleArnKey: "role-arn"
+
+    devops-ai-agent:
+      enabled: true
+      image:
+        registry: docker.io
+        repository: nvlannasik/devops-ai-agent
+
+      commonAnnotations:
+        configmap.reloader.stakater.com/reload: devops-agent-secret
+        secret.reloader.stakater.com/reload: devops-agent-secret
+
+      mcp:
+        transport: "http"
+        serviceName: devops-mcp-server
+        namespace: devops-tools
+        port: 3000
+        authTokenSecret:
+          name: devops-agent-secret
+          key: DASHBOARD_PASSWORD
+
+      slack:
+        existingSecret: devops-agent-secret
+        botTokenKey: "SLACK_BOT_TOKEN"
+        signingSecretKey: "SLACK_SIGNING_SECRET"
+        appTokenKey: "SLACK_APP_TOKEN"
+
+      alertWebhook:
+        existingSecret: devops-agent-secret
+        tokenKey: "ALERT_WEBHOOK_TOKEN"
+
+      llm:
+        provider: "router"
+        backends:
+          - name: haiku
+            kind: claude
+            baseUrl: "https://api.anthropic.com/v1"
+            model: claude-haiku-4-5
+            existingSecret: devops-agent-secret
+            apiKeyKey: CLAUDE_KEY
+          - name: chatgpt
+            kind: openai-compatible
+            baseUrl: "https://api.openai.com/v1"
+            model: gpt-5-nano-2025-08-07
+            existingSecret: devops-agent-secret
+            apiKeyKey: OPENAI_KEY
+          - name: deepseek
+            kind: openai-compatible
+            baseUrl: "https://api.deepseek.com"
+            model: deepseek-v4-flash
+            existingSecret: devops-agent-secret
+            apiKeyKey: DEEPSEEK_KEY
+          - name: private-llm
+            kind: private-llm
+        routes: {}
+        sqs:
+          timeoutSeconds: 240
+          pollWaitSeconds: 20
+
+      investigation:
+        maxConcurrent: 5
+
+      gitops:
+        enabled: true
+        timeoutSeconds: 240
+
+      database:
+        host: "postgresql.postgresql"
+        port: 5432
+        name: "devops_agent"
+        username: "postgres"
+        existingSecret: devops-agent-secret
+        passwordKey: "DB_PASSWORD"
+
+      redis:
+        enabled: true
+        host: "redis.redis"
+        port: 6379
+        db: 0
+        tls: false
+        username: ""
+        existingSecret: "devops-agent-secret"
+        passwordKey: "REDIS_PASSWORD"
+
+      dashboard:
+        enabled: true
+        port: 3001
+        existingSecret: devops-agent-secret
+        passwordKey: "DASHBOARD_PASSWORD"
+
+      env: {}
+
+      extraVolumes:
+        - name: workload-cert
+          secret:
+            secretName: workload-tls
+      extraVolumeMounts:
+        - name: workload-cert
+          mountPath: /certs
+          readOnly: true
+
+      ingress:
+        enabled: true
+        className: "nginx"
+        annotations: 
+          cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+          ingress.kubernetes.io/rewrite-target: /
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
+        hosts: 
+          - host: agent.annasik.cloud
+            paths:
+              - path: /
+                pathType: Prefix
+                port: 3001
+        tls: 
+          - hosts: 
+              - agent.annasik.cloud
+            secretName: ai-agent-tls
+      resources: 
+        limits: 
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 128m
+          memory: 128Mi
+
+    devops-mcp-server:
+      enabled: true
+      image:
+        registry: docker.io
+        repository: nvlannasik/devops-mcp-server
+
+      mcp:
+        transport: "http"
+        authTokenSecret:
+          name: devops-agent-secret
+          key: DASHBOARD_PASSWORD
+
+      kubernetes:
+        authMode: "incluster"
+
+      prometheus:
+        url: "http://monitoring-prometheus-server.monitoring:80"
+      loki:
+        url: "http://loki.monitoring.svc.cluster.local:3100"
+      tracing:
+        backend: "jaeger"
+        url: "http://jaeger-query.monitoring.svc.cluster.local:16686"
+      alertmanager:
+        url: "http://alertmanager.monitoring.svc.cluster.local:9093"
+        existingSecret: "devops-agent-secret"
+        usernameKey: "ALERTMANAGER_USERNAME"
+        passwordKey: "ALERTMANAGER_PASSWORD"
+
+      writeTools:
+        enabled: true
+        allowedNamespaces:
+          - default
+          - flux-system
+          - flux-app
+          - nginx-ingress
+          - default
+          - monitoring
+          - headlamp
+          - sarang-tani
+          - devops-tools
+          - oauth2-proxy
+        maxScaleDelta: 5
+      env:
+        NODE_ENV: "dev"
+
+      rbac:
+        create: true
+        readOnly: true
+        allowWrite: true
+        allowFluxReconcile: true
+
+      resources: 
+        limits: 
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+
+    devops-llm-worker:
+      enabled: true
+      image:
+        registry: docker.io
+        repository: nvlannasik/devops-llm-worker
+      llm:
+        apiFormat: "openai"
+        baseUrl: "https://api.openai.com/v1"
+        model: "gpt-5-nano-2025-08-07"
+        maxTokens: 16384
+        useMaxCompletionTokens: true
+        existingSecret: llm-api-key-secret
+        apiKeyKey: api-key
+      sqs:
+        pollWaitSeconds: 20
+        maxMessages: 10
+      gitops:
+        enabled: true
+        repo: "nvlannasik/gitops-devops-ai-manifest"
+        branch: "main"
+        apiUrl: "https://api.github.com"
+        auth:
+          tokenSecret:
+            name: github-token-secret
+            key: token
+      extraVolumes:
+        - name: workload-cert
+          secret:
+            secretName: workload-tls
+      extraVolumeMounts:
+        - name: workload-cert
+          mountPath: /certs
+          readOnly: true
+
+      resources: 
+        limits: 
+          cpu: 256m
+          memory: 256Mi
+        requests:
+          cpu: 128m
+          memory: 64Mi
+

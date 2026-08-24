@@ -6,3 +6,4 @@ resources:
   # - devops-llm-worker
   - sarang-tani-api
   - sarang-tani-web
+  - devops-ai-stack
