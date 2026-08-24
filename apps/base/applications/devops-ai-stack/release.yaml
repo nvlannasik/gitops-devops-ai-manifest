@@ -285,3 +285,19 @@ spec:
       extraVolumeMounts:
         - name: tmp
           mountPath: /tmp
+
+
+    redis:
+      namespaceOverride: "redis"
+      image:
+        registry: registry-1.docker.io
+        repository: bitnami/redis
+        tag: latest
+      architecture: standalone
+      auth:
+        enabled: true
+        existingSecret: "redis-secret"
+        existingSecretPasswordKey: "redis-password"
+      master:
+        persistence:
+          enabled: true
