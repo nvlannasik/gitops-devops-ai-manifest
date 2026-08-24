@@ -48,13 +48,6 @@ spec:
       secret.reloader.stakater.com/reload: sarang-tani-web-external-secret
     ingress:
       enabled: true
-    resources: {}
-    externalSecret:
-      enabled: false
-    serviceAccount:
-      create: true
-      name: "sarang-tani-web"
-      automountServiceAccountToken: true
     resources:
       requests:
         cpu: 50m
@@ -62,3 +55,9 @@ spec:
       limits:
         cpu: 200m
         memory: 128Mi
+    externalSecret:
+      enabled: false
+    serviceAccount:
+      create: true
+      name: "sarang-tani-web"
+      automountServiceAccountToken: true
