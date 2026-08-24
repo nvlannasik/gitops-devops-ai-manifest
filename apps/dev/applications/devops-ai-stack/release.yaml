@@ -26,8 +26,6 @@ spec:
 
       env:
         NODE_ENV: "dev"
-        CERT_PATH: "/certs/tls.crt"
-        CERT_KEY_PATH: "/certs/tls.key"
 
       ingress:
         annotations: 
@@ -56,9 +54,6 @@ spec:
 
       env:
         NODE_ENV: "dev"
-        CERT_PATH: "/certs/tls.crt"
-        CERT_KEY_PATH: "/certs/tls.key"
-
 
       image:
         tag: latest

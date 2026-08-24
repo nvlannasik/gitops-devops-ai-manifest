@@ -43,6 +43,24 @@ spec:
           trustAnchorArnKey: "trust-anchor-arn"
           profileArnKey: "profile-arn"
           roleArnKey: "role-arn"
+        certificate:
+          create: true
+          secretName: "workload-tls"
+          mountPath: "/certs"
+          name: "workload-cert"
+          issuerRef:
+            name: "workload-ca-issuer"
+            kind: ClusterIssuer
+          duration: "720h"
+          renewBefore: "48h"
+          privateKey:
+            algorithm: RSA
+            size: 2048
+            rotationPolicy: Always
+          usages:
+            - digital signature
+            - key encipherment
+            - client auth
 
     devops-ai-agent:
       enabled: true
@@ -133,15 +151,6 @@ spec:
         passwordKey: "DASHBOARD_PASSWORD"
 
       env: {}
-
-      extraVolumes:
-        - name: workload-cert
-          secret:
-            secretName: workload-tls
-      extraVolumeMounts:
-        - name: workload-cert
-          mountPath: /certs
-          readOnly: true
 
       ingress:
         enabled: true
@@ -252,14 +261,6 @@ spec:
           tokenSecret:
             name: github-token-secret
             key: token
-      extraVolumes:
-        - name: workload-cert
-          secret:
-            secretName: workload-tls
-      extraVolumeMounts:
-        - name: workload-cert
-          mountPath: /certs
-          readOnly: true
 
       resources: 
         limits: 
