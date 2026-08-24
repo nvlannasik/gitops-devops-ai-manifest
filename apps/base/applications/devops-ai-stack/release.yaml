@@ -61,6 +61,8 @@ spec:
             - digital signature
             - key encipherment
             - client auth
+      redis:
+        enabled: true
 
     devops-ai-agent:
       enabled: true
