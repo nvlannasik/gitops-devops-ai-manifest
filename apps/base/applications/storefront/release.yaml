@@ -84,3 +84,7 @@ spec:
       timeoutSeconds: 5
       failureThreshold: 6
       successThreshold: 1
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: /metrics
+      prometheus.io/port: "3000"
