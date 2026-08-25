@@ -46,9 +46,9 @@ spec:
     commonAnnotations:
       configmap.reloader.stakater.com/reload: checkout-gateway-configmap
       secret.reloader.stakater.com/reload: checkout-gateway-secret
-      prometheus.io/scrape: true
+      prometheus.io/scrape: "true"
       prometheus.io/path: /metrics
-      prometheus.io/port: 3000
+      prometheus.io/port: "3000"
     resources:
       requests:
         cpu: 50m
