@@ -87,4 +87,4 @@ spec:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/path: /metrics
-      prometheus.io/port: "3000"
+      prometheus.io/port: "3001"
