@@ -46,9 +46,9 @@ spec:
     commonAnnotations:
       configmap.reloader.stakater.com/reload: orders-api-configmap
       secret.reloader.stakater.com/reload: orders-api-secret
-      prometheus.io/scrape: "true"
+      prometheus.io/scrape: true
       prometheus.io/path: /metrics
-      prometheus.io/port: "3000"
+      prometheus.io/port: 3000
     ingress:
       enabled: true
     resources:
