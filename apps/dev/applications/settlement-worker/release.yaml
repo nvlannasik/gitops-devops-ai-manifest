@@ -1,0 +1,48 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: settlement-worker
+  namespace: flux-app
+spec:
+  chart:
+    spec:
+      version: 1.0.1
+  values:
+    image:
+      tag: latest
+    extraEnvVars:
+      - name: SERVICE_VERSION
+        value: latest
+      - name: DEPLOYMENT_ENV
+        value: dev
+      - name: PORT
+        value: "3001"
+      - name: DB_NAME
+        value: sample_app
+      - name: DB_SSL_MODE
+        value: disable
+      - name: DB_USERNAME
+        value: postgres
+      - name: DB_PORT
+        value: "5432"
+      - name: DB_HOST
+        value: "postgresql.postgresql.svc.cluster.local"
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: orders-api-secret
+            key: DB_PASSWORD
+    secret:
+      enabled: false
+    replicaCount: 1
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    loggingOperator:
+      enabled: false
+    secretStore:
+      enabled: false
+    ingress:
+      enabled: false

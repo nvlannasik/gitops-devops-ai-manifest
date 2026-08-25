@@ -4,3 +4,8 @@ resources:
   - sarang-tani-api
   - sarang-tani-web
   - devops-ai-stack
+  - checkout-gateway
+  - orders-api
+  - settlement-worker
+  - storefront
+  - loadgen

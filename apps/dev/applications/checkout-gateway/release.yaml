@@ -1,0 +1,35 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: checkout-gateway
+  namespace: flux-app
+spec:
+  chart:
+    spec:
+      version: 1.0.1
+  values:
+    image:
+      tag: latest
+    extraEnvVars:
+      - name: SERVICE_VERSION
+        value: latest
+      - name: DEPLOYMENT_ENV
+        value: dev
+      - name: ORDERS_API_URL
+        value: http://orders-api.sample-apps.svc.cluster.local:3000
+      - name: WORKER_URL
+        value: http://settlement-worker.sample-apps.svc.cluster.local:3001
+    secret:
+      enabled: false
+    replicaCount: 1
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    loggingOperator:
+      enabled: false
+    secretStore:
+      enabled: false
+    ingress:
+      enabled: false

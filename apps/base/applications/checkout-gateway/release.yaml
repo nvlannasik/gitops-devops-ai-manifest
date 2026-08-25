@@ -1,0 +1,84 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: checkout-gateway
+  namespace: flux-app
+spec:
+  targetNamespace: sample-apps
+  chart:
+    spec:
+      chart: main
+      reconcileStrategy: Revision
+      sourceRef:
+        kind: HelmRepository
+        name: github
+        namespace: flux-system
+  interval: 1m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+    ignore:
+    - paths: ["/spec/replicas"]
+      target:
+        kind: Deployment
+  values:
+    nameOverride: checkout-gateway
+    fullnameOverride: checkout-gateway
+    commonLabels:
+      app: checkout-gateway
+    image:
+      repository: nvlannasik/checkout-gateway
+      registry: docker.io
+    containerPorts:
+      - name: main
+        containerPort: 3000
+    service:
+      ports:
+        - name: http
+          port: 3000
+          protocol: TCP
+          targetPort: 3000
+    commonAnnotations:
+      configmap.reloader.stakater.com/reload: checkout-gateway-configmap
+      secret.reloader.stakater.com/reload: checkout-gateway-secret
+      prometheus.io/scrape: "true"
+      prometheus.io/path: /metrics
+      prometheus.io/port: "3000"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    externalSecret:
+      enabled: false
+    serviceAccount:
+      create: true
+      name: "checkout-gateway"
+      automountServiceAccountToken: true
+    livenessProbe:
+      enabled: true
+      httpGet:
+        path: /healthz
+        port: 3000
+      initialDelaySeconds: 50
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+      successThreshold: 1
+    readinessProbe:
+      enabled: true
+      httpGet:
+        path: /readyz
+        port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+      successThreshold: 1

@@ -42,7 +42,6 @@ spec:
       enabled: false
     secretStore:
       enabled: false
-    resources: {}
     ingress:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
