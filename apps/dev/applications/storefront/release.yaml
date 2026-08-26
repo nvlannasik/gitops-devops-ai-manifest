@@ -16,9 +16,9 @@ spec:
       - name: DEPLOYMENT_ENV
         value: dev
       - name: GATEWAY_URL
-        value: https://api.annasik.cloud
+        value: http://checkout-gateway.sample-apps.svc.cluster.local:3000
       - name: LOADGEN_UI_URL
-        value: "https://loadgen.annasik.cloud"
+        value: https://loadgen.annasik.cloud
       - name: GATEWAY_AUTH_TOKEN
         valueFrom:
           secretKeyRef:

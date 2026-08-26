@@ -14,7 +14,7 @@ spec:
       - name: SERVICE_VERSION
         value: latest
       - name: TARGET_URL
-        value: https://web.annasik.cloud
+        value: http://storefront.sample-apps.svc.cluster.local:3000
       - name: LOADGEN_RPS
         value: "10"
       - name: LOADGEN_CONCURRENCY
