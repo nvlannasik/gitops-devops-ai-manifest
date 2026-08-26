@@ -42,7 +42,7 @@ spec:
         cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
         ingress.kubernetes.io/rewrite-target: /
         nginx.ingress.kubernetes.io/ssl-redirect: "false"
-      hostname: api.sample.annasik.cloud
+      hostname: api.annasik.cloud
       apiVersion: "networking.k8s.io/v1"
       pathType: Prefix
       path: /
