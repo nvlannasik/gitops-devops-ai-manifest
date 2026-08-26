@@ -19,6 +19,11 @@ spec:
         value: http://orders-api.sample-apps.svc.cluster.local:3000
       - name: WORKER_URL
         value: http://settlement-worker.sample-apps.svc.cluster.local:3001
+      - name: GATEWAY_AUTH_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: checkout-gateway-secret
+            key: GATEWAY_AUTH_TOKEN
     secret:
       enabled: false
     replicaCount: 1
@@ -32,4 +37,14 @@ spec:
     secretStore:
       enabled: false
     ingress:
-      enabled: false
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        ingress.kubernetes.io/rewrite-target: /
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      hostname: api.sample.annasik.cloud
+      apiVersion: "networking.k8s.io/v1"
+      pathType: Prefix
+      path: /
+      tls: true
+      selfSigned: true

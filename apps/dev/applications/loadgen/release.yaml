@@ -14,7 +14,7 @@ spec:
       - name: SERVICE_VERSION
         value: latest
       - name: TARGET_URL
-        value: http://storefront.sample-apps.svc.cluster.local:3000
+        value: https://web.sample.annasik.cloud
       - name: LOADGEN_RPS
         value: "10"
       - name: LOADGEN_CONCURRENCY
@@ -25,6 +25,13 @@ spec:
         value: "0.3"
       - name: LOADGEN_AUTOSTART
         value: "false"
+      - name: LOADGEN_UI_COOKIE_SECURE
+        value: "true"
+      - name: LOADGEN_UI_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: loadgen-secret
+            key: LOADGEN_UI_PASSWORD
     secret:
       enabled: false
     replicaCount: 1
@@ -38,4 +45,14 @@ spec:
     secretStore:
       enabled: false
     ingress:
-      enabled: false
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        ingress.kubernetes.io/rewrite-target: /
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      hostname: loadgen.sample.annasik.cloud
+      apiVersion: "networking.k8s.io/v1"
+      pathType: Prefix
+      path: /
+      tls: true
+      selfSigned: true
