@@ -228,6 +228,7 @@ spec:
           - sarang-tani
           - devops-tools
           - oauth2-proxy
+          - sample-apps
         maxScaleDelta: 5
       env:
         NODE_ENV: "dev"
