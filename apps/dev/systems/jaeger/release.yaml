@@ -1,0 +1,10 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jaeger
+  namespace: flux-system
+spec:
+  values:
+    jaeger:
+      image:
+        tag: "2.20.0"

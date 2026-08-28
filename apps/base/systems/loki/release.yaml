@@ -64,6 +64,29 @@ spec:
         ingestion_rate_mb: 4
         ingestion_burst_size_mb: 6
 
+      # The ruler is a SECOND alert evaluator beside Prometheus. Nothing that
+      # asks Prometheus "what is firing" can see these rules, which is why the
+      # agent treats Alertmanager as the only source of truth for that.
+      #
+      # No extra pod: singleBinary runs targetModule "all", and Loki's `all`
+      # target already includes the Ruler.
+      #
+      # enable_alertmanager_v2 is deliberately absent — Alertmanager removed the
+      # v1 API (410 Gone) and Loki 3.7 already defaults this to true. Older
+      # guides say to set it by hand; it no longer needs setting.
+      rulerConfig:
+        # Only used by recording rules with remote_write, which this has none
+        # of. Pointed at the emptyDir anyway: left unset it is a relative path
+        # resolved against a read-only working directory.
+        wal:
+          dir: /var/loki/ruler-wal
+        storage:
+          type: local
+          local:
+            directory: /rules
+        rule_path: /var/loki/ruler-scratch
+        alertmanager_url: http://alertmanager.monitoring.svc.cluster.local:9093
+
     singleBinary:
       replicas: 1
       persistence:
@@ -86,13 +109,27 @@ spec:
     gateway:
       enabled: false
 
-    monitoring:
-      serviceMonitor:
-        enabled: false
-      selfMonitoring:
-        enabled: false
-      lokiCanary:
-        enabled: false
+    # Top-level in chart 18.x, and it defaults to ON: a DaemonSet on every node
+    # writing and reading back test logs. The old home for this switch was
+    # `monitoring.lokiCanary`, which this chart no longer reads — the key was
+    # accepted in silence and the canary ran anyway.
+    lokiCanary:
+      enabled: false
 
     test:
       enabled: false
+
+    # This sidecar was already running and doing nothing — the chart enables it
+    # by default and no ConfigMap had ever carried the label it watches. Two
+    # values make it earn its keep:
+    sidecar:
+      rules:
+        # rules.yaml is a plain kustomize resource, so it lands in flux-system
+        # with every other manifest here. The sidecar otherwise looks only in
+        # its own namespace (monitoring) and would find nothing.
+        searchNamespace: flux-system
+        # The tenant subdirectory, and the trap in this whole setup: with
+        # auth_enabled false every stream belongs to tenant "fake", and the
+        # ruler reads <directory>/<tenant>/. Files dropped straight into
+        # /rules are never read and NOTHING logs a complaint about it.
+        folder: /rules/fake

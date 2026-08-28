@@ -208,7 +208,7 @@ spec:
         url: "http://loki.monitoring.svc.cluster.local:3100"
       tracing:
         backend: "jaeger"
-        url: "http://jaeger-query.monitoring.svc.cluster.local:16686"
+        url: "http://jaeger.monitoring.svc.cluster.local:16686"
       alertmanager:
         url: "http://alertmanager.monitoring.svc.cluster.local:9093"
         existingSecret: "devops-agent-secret"

@@ -1,0 +1,55 @@
+# Loki Ruler alerting rules. Delivered by the loki-sc-rules sidecar that the
+# chart already runs (it watches ConfigMaps carrying the `loki_rule` label and
+# writes them into the volume it shares with the Loki container), so nothing new
+# is scheduled for this.
+#
+# It lives in flux-system rather than monitoring only because the kustomization
+# above it sets that namespace on everything; `sidecar.rules.searchNamespace`
+# in release.yaml is what points the sidecar here, and the chart's ClusterRole
+# already grants configmap reads cluster-wide.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-rules
+  labels:
+    loki_rule: "1"
+data:
+  sample-apps.yaml: |
+    groups:
+      - name: sample-apps-logs
+        interval: 1m
+        rules:
+          # The 5xx that exists in logs. `handleError` in the sample apps'
+          # shared HTTP server does finish(500) and logs this exact message on
+          # the same path, so this and Prometheus' HighErrorRate see one event
+          # from two sides: the counter says how often, the log says which
+          # route and which error.
+          - alert: AppUnhandledRouteError
+            expr: |
+              sum by (namespace, service, pod) (
+                rate({namespace="sample-apps"} | json | msg = "unhandled route error" [5m])
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              source: loki
+            annotations:
+              summary: "Unhandled route errors in `{{ $labels.service }}` at `Dev cluster`"
+              description: "`{{ $labels.service }}` is returning 500s from pod `{{ $labels.pod }}`. The route and the exception are in the log line, not in the counter. :pepe_susq:"
+
+          # What no counter can see. settlement-worker serves no HTTP traffic,
+          # so http_server_requests_total never moves for it — a failing batch
+          # is visible only here. `msg !=` keeps this from double-firing with
+          # the alert above.
+          - alert: AppErrorLogSpike
+            expr: |
+              sum by (namespace, service, pod) (
+                rate({namespace="sample-apps"} | json | level = "error" | msg != "unhandled route error" [5m])
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              source: loki
+            annotations:
+              summary: "Error log spike in `{{ $labels.service }}` at `Dev cluster`"
+              description: "Pod `{{ $labels.pod }}` is logging errors that never became an HTTP status. Read the log, there is no metric for this one. :pedro:"

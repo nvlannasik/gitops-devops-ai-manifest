@@ -33,12 +33,28 @@ spec:
             HTTP_PORT     2020
             Health_Check  On
 
+      # multiline.parser cri, NOT "Parser docker": k3s runs containerd, whose
+      # log lines are CRI ("<time> stdout F <msg>"), not Docker JSON. The docker
+      # parser is Format json, so it failed on every line and shipped the raw
+      # text -- CRI prefix included -- with the ingest time as the timestamp and
+      # no stream field for the label the OUTPUT section asks for.
+      #
+      # It is the MULTILINE cri parser and not parsers.conf's "Parser cri": the
+      # multiline one captures the body as `log`, which is the key the kubernetes
+      # filter's Merge_Log below reads; parsers.conf's captures `message`, which
+      # Merge_Log cannot see. It also rejoins the partial lines containerd splits
+      # at 16k (the "P" logtag), which Skip_Long_Lines would otherwise drop.
+      #
+      # Comments live out here rather than inside the block scalar: anything in
+      # there is copied into the ConfigMap and shipped to every node.
       inputs: |
         [INPUT]
             Name              tail
             Path              /var/log/containers/*.log
-            Parser            docker
+            Exclude_Path      /var/log/containers/fluentbit*.log
+            multiline.parser  cri
             Tag               kube.*
+            DB                /var/log/flb_kube.db
             Refresh_Interval  5
             Mem_Buf_Limit     5MB
             Skip_Long_Lines   On

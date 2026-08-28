@@ -13,6 +13,7 @@ resources:
   - ./helm/pgadmin.yaml
   - ./helm/oauth2-proxy.yaml
   - ./helm/grafana.yaml
+  - ./helm/jaegertracing.yaml
   - ./helm/prometheus.yaml
   - ./helm/aws-load-balancer-controller.yaml
   - ./helm/temporalio.yaml

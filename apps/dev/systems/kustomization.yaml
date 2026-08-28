@@ -8,6 +8,7 @@ resources:
   - alertmanager
   - postgres
   - loki
+  - jaeger
   - fluentbit
   - grafana
   - headlamp
