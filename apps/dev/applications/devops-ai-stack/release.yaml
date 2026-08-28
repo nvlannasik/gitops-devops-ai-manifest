@@ -27,6 +27,7 @@ spec:
       env:
         NODE_ENV: "dev"
         INCIDENT_RECONCILE_ENABLED: "true"
+        SUBAGENT_ENABLED: "true"
         INVESTIGATION_TIMEOUT_SECONDS: 600
         SUBAGENT_MAX_ITERATIONS: 3
         SUBAGENT_TOOL_ROUNDS: 2
