@@ -38,7 +38,17 @@ spec:
         pipelines:
           traces:
             receivers: [otlp]
-            processors: [batch]
+            # No processors. The upstream default runs `batch`, which buys
+            # nothing here: the exporter is jaeger_storage_exporter writing to
+            # an in-process memory map, so there is no network write to amortise.
+            #
+            # It also cannot be written the way upstream writes it. A bare
+            # `batch:` is YAML null, and null in a strategic merge patch means
+            # DELETE THIS KEY — so the dev overlay's merge stripped it from the
+            # processors map while this list still named it, and the collector
+            # refused to start with "references processor batch which is not
+            # configured". Helm alone never showed it. Any processor added here
+            # needs a non-null value, `{}` at minimum.
             exporters: [jaeger_storage_exporter]
         telemetry:
           resource:
@@ -80,9 +90,6 @@ spec:
               endpoint: 0.0.0.0:4317
             http:
               endpoint: 0.0.0.0:4318
-
-      processors:
-        batch:
 
       exporters:
         jaeger_storage_exporter:
