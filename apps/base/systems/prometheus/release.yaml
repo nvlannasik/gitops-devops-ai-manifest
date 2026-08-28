@@ -116,6 +116,8 @@ spec:
                 for: 0m
                 labels:
                   severity: warning
+                  pod: "{{ $labels.pod }}"
+                  namespace: "{{ $labels.namespace }}"
                 annotations:
                   summary: Kubernetes Container oom killer (instance {{ $labels.instance }})
                   description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 10 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
@@ -124,49 +126,51 @@ spec:
                 for: 1m
                 labels:
                   severity: critical
+                  pod: "{{ $labels.pod }}"
+                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: High error rate detected (service {{ $labels.service }})
-                  description: "The error rate for service {{ $labels.service }} has exceeded 5% in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: High error rate detected (service `{{ $labels.service }}`)
+                  description: "The error rate for service `{{ $labels.service }}` has exceeded 5% in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
               - alert: HighLatency
-                expr: histogram_quantile(0.99,sum by (namespace, service, le) (rate(http_server_request_duration_seconds_bucket[5m]))) > 1
+                expr: histogram_quantile(0.99,sum by (namespace, service, le) (rate(http_server_request_duration_seconds_bucket[5m]))) > 5
                 for: 1m
                 labels:
                   severity: critical
+                  pod: "{{ $labels.pod }}"
+                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: High latency detected (service {{ $labels.service }})
-                  description: "The 99th percentile latency for service {{ $labels.service }} has exceeded 1 second in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: High latency detected (service `{{ $labels.service }}`)
+                  description: "The 99th percentile latency for service `{{ $labels.service }}` has exceeded 1 second in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
               - alert: QueueBacklog
                 expr: max by (namespace, queue) (queue_oldest_job_age_seconds) > 100
                 for: 1m
                 labels:
                   severity: warning
+                  pod: "{{ $labels.pod }}"
+                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: Queue backlog detected (queue {{ $labels.queue }})
-                  description: "The queue {{ $labels.queue }} has a backlog of more than 100 messages in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: Queue backlog detected (queue `{{ $labels.queue }}`)
+                  description: "The queue `{{ $labels.queue }}` has a backlog of more than 100 messages in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
               - alert: DeploymentNotReady
                 expr: kube_deployment_spec_replicas - on (namespace, deployment) kube_deployment_status_replicas_ready > 0
                 for: 5m
                 labels:
                   severity: warning
+                  deployment: "{{ $labels.deployment }}"
+                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: Deployment not ready (deployment {{ $labels.deployment }})
-                  description: "The deployment {{ $labels.deployment }} has unavailable replicas in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: Deployment not ready (deployment `{{ $labels.deployment }}`)
+                  description: "The deployment `{{ $labels.deployment }}` has unavailable replicas in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
               - alert: DeploymentCPUThorttling
-                expr: >-
-                  sum by (pod, container) (
-                    rate(container_cpu_cfs_throttled_periods_total{namespace="sample-apps",container!=""}[5m])
-                  )
-                  /
-                  sum by (pod, container) (
-                    rate(container_cpu_cfs_periods_total{namespace="sample-apps",container!=""}[5m])
-                  )
-                  > 0.05
+                expr: sum by (pod, container) (rate(container_cpu_cfs_throttled_periods_total{namespace="sample-apps",container!=""}[5m])) / sum by (pod, container) (rate(container_cpu_cfs_periods_total{namespace="sample-apps",container!=""}[5m])) > 0.05
                 for: 5m
                 labels:
                   severity: warning
+                  deployment: "{{ $labels.deployment }}"
+                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: Deployment CPU throttling (deployment {{ $labels.deployment }})
-                  description: "The deployment {{ $labels.deployment }} is experiencing CPU throttling in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: Deployment CPU throttling (deployment `{{ $labels.deployment }}`)
+                  description: "The deployment `{{ $labels.deployment }}` is experiencing CPU throttling in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
     alertmanager:
       enabled: false
     prometheus-pushgateway:
