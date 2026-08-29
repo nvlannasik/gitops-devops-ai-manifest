@@ -31,6 +31,7 @@ spec:
         INVESTIGATION_TIMEOUT_SECONDS: 600
         SUBAGENT_MAX_ITERATIONS: 3
         SUBAGENT_TOOL_ROUNDS: 2
+        LLM_MAX_TOKENS: 16384
 
       ingress:
         annotations: 
