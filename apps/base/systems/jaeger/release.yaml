@@ -108,3 +108,16 @@ spec:
         limits:
           cpu: 250m
           memory: 320Mi
+      ingress:
+        enabled: true
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+          ingress.kubernetes.io/rewrite-target: /
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
+        hosts:
+          - jaeger.annasik.cloud
+        tls:
+          - hosts:
+              - jaeger.annasik.cloud
+            secretName: jaeger-tls
+
