@@ -15,6 +15,8 @@ spec:
         value: latest
       - name: DEPLOYMENT_ENV
         value: dev
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://jaeger.monitoring.svc.cluster.local:4318
       - name: ORDERS_API_URL
         value: http://orders-api.sample-apps.svc.cluster.local:3000
       - name: WORKER_URL

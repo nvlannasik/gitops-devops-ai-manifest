@@ -15,6 +15,8 @@ spec:
         value: latest
       - name: DEPLOYMENT_ENV
         value: dev
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://jaeger.monitoring.svc.cluster.local:4318
       - name: DB_NAME
         value: sample_app
       - name: DB_SSL_MODE
