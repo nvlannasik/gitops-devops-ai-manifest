@@ -9,7 +9,7 @@ spec:
       version: 1.0.1
   values:
     image:
-      tag: v1
+      tag: latest
     extraEnvVars:
       - name: SERVICE_VERSION
         value: latest
