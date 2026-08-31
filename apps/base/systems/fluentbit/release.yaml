@@ -59,6 +59,11 @@ spec:
             Mem_Buf_Limit     5MB
             Skip_Long_Lines   On
 
+      # `Labels On` is load-bearing now: identity.lua reads the pod's labels to
+      # decide what `app` is. `Annotations Off` is the opposite -- annotations were
+      # being fetched from the API, carried through the pipeline and then dropped
+      # whole by the output's `Remove_keys kubernetes`. Nothing ever read them, and
+      # one of them is routinely the entire last-applied-configuration blob.
       filters: |
         [FILTER]
             Name                kubernetes
@@ -68,16 +73,82 @@ spec:
             Keep_Log            Off
             K8S-Logging.Parser  On
             K8S-Logging.Exclude On
+            Labels              On
+            Annotations         Off
 
+        [FILTER]
+            Name    lua
+            Match   kube.*
+            script  /fluent-bit/scripts/identity.lua
+            call    set_identity
+
+      # The stream label set. Every one of these is bounded by something that
+      # changes on a deploy at worst, which is what keeps Loki's index small --
+      # `Auto_kubernetes_labels off` stays off for exactly that reason: it would
+      # promote EVERY pod label, `pod-template-hash` included, and that one is new
+      # on every rollout forever.
+      #
+      # `job` follows the Loki/Grafana convention of `<namespace>/<app>`, not the
+      # constant `fluentbit` it used to be -- a label with one value across every
+      # stream in the cluster costs index space and answers no question.
+      #
+      # k8s_app / k8s_job are left IN the log line rather than added to Remove_keys.
+      # Whether the plugin resolves label accessors before or after remove_keys is
+      # not worth betting the whole label set on: if it removed first, every stream
+      # would silently lose `app` and `job`, and an empty Loki result is
+      # indistinguishable from "no logs" to anything reading it. The cost of being
+      # sure is ~40 bytes a line, and they stay queryable as JSON fields too.
       outputs: |
         [OUTPUT]
             Name        loki
             Match       kube.*
             Host        loki.monitoring.svc.cluster.local
             Port        3100
-            Labels      job=fluentbit, namespace=$kubernetes['namespace_name'], pod=$kubernetes['pod_name'], container=$kubernetes['container_name'], stream=$stream
+            Labels      job=$k8s_job, namespace=$kubernetes['namespace_name'], app=$k8s_app, container=$kubernetes['container_name'], pod=$kubernetes['pod_name'], stream=$stream
             Remove_keys kubernetes
             Auto_kubernetes_labels off
+
+    # Mounted at /fluent-bit/scripts by the chart, which also stamps a
+    # checksum/luascripts annotation on the DaemonSet -- editing this rolls the pods.
+    luaScripts:
+      identity.lua: |
+        -- One workload identity for every log line, whatever the author labelled it.
+        --
+        -- Before this, the only per-workload labels were `pod` (new name on every
+        -- rollout, so useless for "show me this service over the last day") and
+        -- `container` (often just "app" or "main"). Anything asking a question about
+        -- a SERVICE had no label to ask it with.
+        --
+        -- The chain is a priority order, not a guess: `app.kubernetes.io/name` is the
+        -- Kubernetes-recommended label and what every Helm chart in this cluster sets,
+        -- `app` is what the sample apps set via commonLabels, `k8s-app` is the older
+        -- convention still used by kube-system components. container_name is the last
+        -- resort so that EVERY stream carries an `app` -- a pipeline that labels most
+        -- things and silently skips the rest is worse than one that labels nothing,
+        -- because the gap only shows up as an empty query result.
+        function set_identity(tag, timestamp, record)
+          local k8s = record["kubernetes"]
+          if k8s == nil then
+            return 0, timestamp, record
+          end
+
+          local labels = k8s["labels"] or {}
+          local app = labels["app.kubernetes.io/name"]
+                   or labels["app"]
+                   or labels["k8s-app"]
+                   or labels["app.kubernetes.io/instance"]
+                   or k8s["container_name"]
+                   or "unknown"
+
+          local ns = k8s["namespace_name"] or "unknown"
+
+          record["k8s_app"] = app
+          record["k8s_job"] = ns .. "/" .. app
+
+          -- 2 = record modified, keep the ORIGINAL timestamp. Returning 1 here would
+          -- hand back our own and re-stamp every line with pipeline time.
+          return 2, timestamp, record
+        end
 
     resources:
       requests:
