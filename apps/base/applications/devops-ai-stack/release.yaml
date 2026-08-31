@@ -262,6 +262,8 @@ spec:
         useMaxCompletionTokens: true
         existingSecret: llm-api-key-secret
         apiKeyKey: api-key
+        sampling:
+          reasoningEffort: high
       sqs:
         pollWaitSeconds: 20
         maxMessages: 10
