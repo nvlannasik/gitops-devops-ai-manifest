@@ -118,6 +118,7 @@ spec:
             apiKeyKey: DEEPSEEK_KEY
           - name: private-llm
             kind: private-llm
+            model: gpt-5-nano-2025-08-07
         routes: {}
         sqs:
           timeoutSeconds: 240
