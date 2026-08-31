@@ -264,7 +264,7 @@ spec:
         existingSecret: llm-api-key-secret
         apiKeyKey: api-key
         sampling:
-          reasoningEffort: low
+          reasoningEffort: high
       sqs:
         pollWaitSeconds: 20
         maxMessages: 10

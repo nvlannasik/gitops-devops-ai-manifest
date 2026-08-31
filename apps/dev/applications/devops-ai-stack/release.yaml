@@ -23,7 +23,6 @@ spec:
         routes:
           heavy: [private-llm, chatgpt, haiku]
           light: [deepseek]
-        maxTokens: 16384
 
       env:
         NODE_ENV: "dev"
