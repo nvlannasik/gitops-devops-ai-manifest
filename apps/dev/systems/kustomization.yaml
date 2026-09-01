@@ -15,5 +15,5 @@ resources:
   - oauth2-proxy
   # - nuclio
   # - mongodb
-  - mqtt-broker
+  # - mqtt-broker
   - longhorn
