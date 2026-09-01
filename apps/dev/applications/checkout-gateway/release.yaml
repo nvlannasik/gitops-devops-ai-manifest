@@ -49,3 +49,10 @@ spec:
       path: /
       tls: true
       selfSigned: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 56Mi
+      limits:
+        cpu: 100m
+        memory: 96Mi
