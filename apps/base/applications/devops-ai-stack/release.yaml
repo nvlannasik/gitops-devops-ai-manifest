@@ -30,9 +30,9 @@ spec:
   values:
     global:
       sqs:
-        requestQueue: "llm-request.fifo"
-        responseQueue: "llm-response.fifo"
-        requestDlq: "llm-request-dlq.fifo"
+        requestQueue: "private-llm-request.fifo"
+        responseQueue: "private-llm-response.fifo"
+        requestDlq: "private-llm-request-dlq.fifo"
         gitopsRequestQueue: "gitops-request.fifo"
       aws:
         region: "ap-southeast-1"
@@ -118,7 +118,8 @@ spec:
             apiKeyKey: DEEPSEEK_KEY
           - name: private-llm
             kind: private-llm
-            model: gpt-5-nano-2025-08-07
+            contextTokens: 128000
+            model: agus
         routes: {}
         sqs:
           timeoutSeconds: 240
