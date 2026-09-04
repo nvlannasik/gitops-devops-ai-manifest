@@ -326,15 +326,21 @@ spec:
         tag: latest
       metrics:
         enabled: true
-        # NOT the chart default (bitnami/redis-exporter:1.70.0-debian-12-r2). That tag is gone
-        # from the registry — `docker manifest inspect` returns not-found — so metrics.enabled
-        # with default values yields an ImagePullBackOff sidecar and a Redis pod that never
-        # becomes Ready again. oliver006 is the upstream image Bitnami repackages; same binary,
-        # same metric names.
+        # The chart default is bitnami/redis-exporter:1.70.0-debian-12-r2, and that exact tag
+        # is gone from the `bitnami` org — `docker manifest inspect` returns not-found, so the
+        # sidecar would ImagePullBackOff and the Redis pod never goes Ready. The SAME tag is
+        # still published under `bitnamilegacy`, which is what this points at.
+        #
+        # Not the upstream oliver006 image, even though it is the same binary: this chart
+        # hardcodes the metrics container's command to
+        #   /bin/bash -ec 'export REDIS_PASSWORD="$(< $REDIS_PASSWORD_FILE)"; redis_exporter'
+        # because auth.usePasswordFiles reads the password from a mounted file. oliver006 is a
+        # scratch image with no shell, so it dies at container init with
+        # `exec: "/bin/bash": no such file or directory` — never reaching the exporter at all.
         image:
           registry: docker.io
-          repository: oliver006/redis_exporter
-          tag: v1.70.0
+          repository: bitnamilegacy/redis-exporter
+          tag: 1.70.0-debian-12-r2
         # Unlike postgres above, no podAnnotations are needed: this chart already defaults
         # metrics.podAnnotations to prometheus.io/scrape + port 9121 on the master pod, which
         # the built-in `kubernetes-pods` job reads directly.
