@@ -263,6 +263,7 @@ spec:
 
     devops-llm-worker:
       enabled: true
+      requestQueue: "private-llm-chatgpt-request.fifo"
       image:
         registry: docker.io
         repository: nvlannasik/llm-worker
