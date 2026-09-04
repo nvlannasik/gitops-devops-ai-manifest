@@ -70,107 +70,441 @@ spec:
         rule_files:
           - /etc/config/alerting_rules.yml
       alerting_rules.yml:
+        # Thresholds and `for:` here are deliberately LOWER than production parity. This
+        # cluster exists to reproduce incidents and benchmark devops-ai-agent, so a rule that
+        # needs 5 minutes and real traffic to fire is a rule that never gets tested. The cost
+        # is that a few of these sit close to idle baseline — see the note on each one.
+        #
+        # Label selectors assume the chart's built-in `kubernetes-pods` scrape job (annotation
+        # driven, so `job="kubernetes-pods"` for everything in sample-apps) and a
+        # kube-state-metrics running in kube-system, which the dev overlay scrapes as
+        # `job="kube-state-metrics"`. The chart's own kube-state-metrics subchart is disabled.
         groups:
-          - name: job
+          - name: kubernetes-platform
             rules:
               - alert: KubernetesPodNotHealthy
                 expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
-                for: 5m
-                labels:
-                  severity: critical
-                  pod: "{{ $labels.pod }}"
-                  namespace: "{{ $labels.namespace }}"
-                annotations:
-                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `Dev cluster`"
-                  description: "Not feeling so well! Pod `{{ $labels.pod }}` has health issues. Time for a check-up! :pepe_susq:"
-              - alert: KubernetesPodCrashLooping
-                expr: increase(kube_pod_container_status_restarts_total[5m]) > 3
                 for: 2m
                 labels:
                   severity: critical
-                  pod: "{{ $labels.pod }}"
-                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `Dev cluster`"
-                  description: 'Pod `{{ $labels.pod }}` seems to be stuck in a crash loop for {{ printf "%.0f" $value }} minutes. It''s time to break the cycle! :pedro:'
-              - alert: WorkerNodeIsNotReady
-                expr: kube_node_status_condition{condition="Ready", status="true"} == 0
-                for: 10m
+                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `Dev cluster`"
+                  description: "Not feeling so well! Pod `{{ $labels.pod }}` in `{{ $labels.namespace }}` has health issues. Time for a check-up! :pepe_susq:"
+              - alert: KubernetesPodCrashLooping
+                expr: increase(kube_pod_container_status_restarts_total[5m]) > 2
+                for: 1m
                 labels:
                   severity: critical
-                  node: "{{ $labels.node }}"
+                annotations:
+                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `Dev cluster`"
+                  description: 'Container `{{ $labels.container }}` in pod `{{ $labels.namespace }}/{{ $labels.pod }}` restarted {{ printf "%.0f" $value }} times in the last 5 minutes. It''s time to break the cycle! :pedro:'
+              # The most common cluster incident there is: a tag that does not exist, a private
+              # registry with no pull secret. Nothing crash-loops, the container never starts,
+              # so no restart counter moves and KubernetesPodCrashLooping stays silent.
+              - alert: KubernetesPodImagePullFailing
+                expr: sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull|InvalidImageName"}) > 0
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Image pull failing for `{{ $labels.namespace }}/{{ $labels.pod }}`"
+                  description: "Container `{{ $labels.container }}` cannot pull its image. The tag, the registry, or the pull secret is wrong — the container has never started, so there is nothing in its log to read. :hmmmmm:"
+              # A rollout that was accepted but never converged: the controller has not observed
+              # the current spec generation. Distinct from replicas-not-ready — this one means
+              # the Deployment object itself is stuck, not the pods under it.
+              - alert: KubernetesDeploymentRolloutStuck
+                expr: |
+                  kube_deployment_status_observed_generation
+                    != on (namespace, deployment) kube_deployment_metadata_generation
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Rollout of `{{ $labels.namespace }}/{{ $labels.deployment }}` is not converging"
+                  description: "The Deployment spec changed but the controller has not caught up for 2 minutes. Either the rollout is blocked on a failing probe or the controller is wedged."
+              - alert: KubernetesDeploymentNotReady
+                expr: |
+                  kube_deployment_spec_replicas
+                    - on (namespace, deployment) kube_deployment_status_replicas_ready
+                    > 0
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Deployment `{{ $labels.namespace }}/{{ $labels.deployment }}` has replicas that never became ready"
+                  description: "{{ $value }} replica(s) are not ready. Pod phase stays Running in this state, so no phase-based rule sees it — the readiness probe is the thing to look at."
+              # Every pod can be healthy and the Service still serve nothing: a selector that
+              # matches no labels looks exactly like this and is invisible to every pod-level rule.
+              #
+              # `unless`, not `== 0`: an EndpointSlice with no ready address emits no
+              # kube_endpointslice_endpoints series at all, and `== 0` cannot match a series that
+              # does not exist. kube_endpointslice_info survives, so the set difference is the
+              # only form that sees an empty slice.
+              #
+              # Scoped to sample-apps because four slices elsewhere (nuclio, mongodb, traefik,
+              # devops-agent-redis) are deliberately empty and would stand permanently firing.
+              - alert: KubernetesServiceHasNoReadyEndpoints
+                expr: |
+                  sum by (namespace, endpointslice) (kube_endpointslice_info{namespace="sample-apps"})
+                    unless on (namespace, endpointslice)
+                  sum by (namespace, endpointslice) (kube_endpointslice_endpoints{namespace="sample-apps",ready="true"})
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "EndpointSlice `{{ $labels.namespace }}/{{ $labels.endpointslice }}` has no ready endpoints"
+                  description: "This Service is a black hole — it accepts connections and routes them nowhere. The slice name is `<service>-<hash>`. Check the selector against the pod labels before assuming the pods are down."
+              - alert: WorkerNodeIsNotReady
+                expr: kube_node_status_condition{condition="Ready", status="true"} == 0
+                for: 3m
+                labels:
+                  severity: critical
                 annotations:
                   summary: "Kubernetes Node `{{ $labels.node }}` is not ready"
-                  description: "Kubernetes Node `{{ $labels.node }}` is not ready for more than 10 minutes. Time to check the health of the node! :hmmmmm:"
+                  description: "Kubernetes Node `{{ $labels.node }}` is not ready for more than 3 minutes. Time to check the health of the node! :hmmmmm:"
               - alert: KubernetesNodeMemoryPressure
                 expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
                 for: 2m
                 labels:
                   severity: critical
-                  node: "{{ $labels.node }}"
                 annotations:
-                  summary: Kubernetes Node memory pressure (instance {{ $labels.instance }})
-                  description: "Node {{ $labels.node }} has MemoryPressure condition\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: "Kubernetes Node `{{ $labels.node }}` is under memory pressure"
+                  description: "Node `{{ $labels.node }}` has the MemoryPressure condition. The kubelet will start evicting pods; the eviction victim is rarely the pod that caused it."
+              - alert: KubernetesStatefulSetDown
+                expr: kube_statefulset_replicas > 0 and kube_statefulset_replicas != kube_statefulset_status_replicas_ready and changes(kube_statefulset_status_replicas_updated[10m]) == 0
+                for: 3m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Kubernetes StatefulSet `{{ $labels.namespace }}/{{ $labels.statefulset }}` is down"
+                  description: "StatefulSet `{{ $labels.namespace }}/{{ $labels.statefulset }}` has unready replicas and no rollout in progress."
+
+          - name: container-saturation
+            rules:
+              # Post-mortem: the kill already happened. KubernetesContainerMemoryNearLimit below
+              # is the same incident caught before the kill, and is the one a remediation can act on.
               - alert: KubernetesContainerOomKiller
                 expr: (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m]) == 1
                 for: 0m
                 labels:
                   severity: warning
-                  pod: "{{ $labels.pod }}"
-                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: Kubernetes Container oom killer (instance {{ $labels.instance }})
-                  description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 10 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-              - alert: HighErrorRate
-                expr: rate(http_server_requests_total{status=~"5.."}[5m]) > 0.05
+                  summary: "Container `{{ $labels.container }}` was OOMKilled in `{{ $labels.namespace }}/{{ $labels.pod }}`"
+                  description: "Container `{{ $labels.container }}` in pod `{{ $labels.namespace }}/{{ $labels.pod }}` has been OOMKilled {{ $value }} times in the last 10 minutes. The memory limit is the knob; whether the limit is too low or the code leaks is the question."
+              # Measured baseline in sample-apps is 0.56 at the top (storefront), so 0.85 is
+              # quiet at rest and one limit cut away from firing. Scoped to sample-apps: at the
+              # time of writing monitoring/prometheus-server sits at 0.94 of its own limit, and
+              # a benchmark rule is the wrong place to carry that — it is a real problem with
+              # its own fix, not background noise for every incident run.
+              - alert: KubernetesContainerMemoryNearLimit
+                expr: |
+                  sum by (namespace, pod, container) (container_memory_working_set_bytes{namespace="sample-apps",container!="",container!="POD"})
+                    / on (namespace, pod, container)
+                  sum by (namespace, pod, container) (container_spec_memory_limit_bytes{namespace="sample-apps",container!="",container!="POD"} > 0)
+                    > 0.85
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Container `{{ $labels.container }}` is at {{ $value | humanizePercentage }} of its memory limit"
+                  description: "`{{ $labels.namespace }}/{{ $labels.pod }}` is close enough to its limit that the next allocation spike is an OOMKill. This fires before the kill, so there is still something to change."
+              # Baseline in sample-apps is under 0.015, so 0.05 is reachable by halving a cpu
+              # limit and silent otherwise. Scoped for the same reason as the rule above:
+              # postgresql (0.36), redis (0.33), prometheus-server (0.17), llm-worker (0.10) and
+              # mcp-server (0.07) are all throttled right now, cluster-wide and permanently.
+              - alert: KubernetesContainerCPUThrottling
+                expr: |
+                  sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{namespace="sample-apps",container!="",container!="POD"}[5m]))
+                    / on (namespace, pod, container)
+                  sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{namespace="sample-apps",container!="",container!="POD"}[5m]) > 0)
+                    > 0.05
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Container `{{ $labels.container }}` is CPU throttled {{ $value | humanizePercentage }} of the time"
+                  description: "`{{ $labels.namespace }}/{{ $labels.pod }}` is hitting its CPU limit. Latency rises with no error and no restart, so every health check stays green while the service is slow."
+              # Disk full is the classic 3am page. Nothing can make this fire on its own — it
+              # needs a PVC actually filled, which is the point: it should never be noise.
+              - alert: KubernetesPersistentVolumeFillingUp
+                expr: |
+                  kubelet_volume_stats_available_bytes
+                    / on (namespace, persistentvolumeclaim) kubelet_volume_stats_capacity_bytes
+                    < 0.25
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "PVC `{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}` is {{ $value | humanizePercentage }} free"
+                  description: "Less than 25% of the volume remains. A database that fills its volume stops accepting writes and never recovers on its own."
+
+          - name: sample-apps
+            rules:
+              # A ratio, not a raw rate. The previous form compared 5xx per second against 0.05
+              # and called it "5%": at 100 rps a 0.05% error rate fired it, at 0.5 rps a total
+              # outage did not. The `and` clause is a floor on total traffic so a single 500
+              # against an idle service does not page — 0.01 r/s is one request per 100 seconds,
+              # low enough that the load generator is not required.
+              - alert: SampleAppHighErrorRate
+                expr: |
+                  (
+                    sum by (namespace, service) (rate(http_server_requests_total{namespace="sample-apps",status=~"5.."}[5m]))
+                      / on (namespace, service)
+                    sum by (namespace, service) (rate(http_server_requests_total{namespace="sample-apps"}[5m]))
+                  ) > 0.05
+                  and on (namespace, service)
+                  sum by (namespace, service) (rate(http_server_requests_total{namespace="sample-apps"}[5m])) > 0.01
                 for: 1m
                 labels:
                   severity: critical
-                  pod: "{{ $labels.pod }}"
-                  namespace: "{{ $labels.namespace }}"
                 annotations:
-                  summary: High error rate detected (service `{{ $labels.service }}`)
-                  description: "The error rate for service `{{ $labels.service }}` has exceeded 5% in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-              # - alert: HighLatency
-              #   expr: histogram_quantile(0.99,sum by (namespace, service, le) (rate(http_server_request_duration_seconds_bucket[5m]))) > 5
-              #   for: 1m
-              #   labels:
-              #     severity: critical
-              #     pod: "{{ $labels.pod }}"
-              #     namespace: "{{ $labels.namespace }}"
-              #   annotations:
-              #     summary: High latency detected (service `{{ $labels.service }}`)
-              #     description: "The 99th percentile latency for service `{{ $labels.service }}` has exceeded 1 second in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-              # - alert: QueueBacklog
-              #   expr: max by (namespace, queue) (queue_oldest_job_age_seconds) > 100
-              #   for: 1m
-              #   labels:
-              #     severity: warning
-              #     pod: "{{ $labels.pod }}"
-              #     namespace: "{{ $labels.namespace }}"
-              #   annotations:
-              #     summary: Queue backlog detected (queue `{{ $labels.queue }}`)
-              #     description: "The queue `{{ $labels.queue }}` has a backlog of more than 100 messages in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-              # - alert: DeploymentNotReady
-              #   expr: kube_deployment_spec_replicas - on (namespace, deployment) kube_deployment_status_replicas_ready > 0
-              #   for: 5m
-              #   labels:
-              #     severity: warning
-              #     deployment: "{{ $labels.deployment }}"
-              #     namespace: "{{ $labels.namespace }}"
-              #   annotations:
-              #     summary: Deployment not ready (deployment `{{ $labels.deployment }}`)
-              #     description: "The deployment `{{ $labels.deployment }}` has unavailable replicas in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-              # - alert: DeploymentCPUThorttling
-              #   expr: sum by (pod, container) (rate(container_cpu_cfs_throttled_periods_total{namespace="sample-apps",container!=""}[5m])) / sum by (pod, container) (rate(container_cpu_cfs_periods_total{namespace="sample-apps",container!=""}[5m])) > 0.05
-              #   for: 5m
-              #   labels:
-              #     severity: warning
-              #     deployment: "{{ $labels.deployment }}"
-              #     namespace: "{{ $labels.namespace }}"
-              #   annotations:
-              #     summary: Deployment CPU throttling (deployment `{{ $labels.deployment }}`)
-              #     description: "The deployment `{{ $labels.deployment }}` is experiencing CPU throttling in the last 5 minutes.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+                  summary: "`{{ $labels.service }}` is failing {{ $value | humanizePercentage }} of requests"
+                  description: "`{{ $labels.service }}` in `{{ $labels.namespace }}` has returned 5xx for {{ $value | humanizePercentage }} of requests over the last 5 minutes. The counter says how often; the route and the exception are only in the log."
+              # 0.5s is a real histogram bucket edge, so the quantile can actually land on it.
+              # Anything between buckets is interpolated and moves under its own noise.
+              - alert: SampleAppHighLatency
+                expr: |
+                  histogram_quantile(
+                    0.99,
+                    sum by (namespace, service, le) (rate(http_server_request_duration_seconds_bucket{namespace="sample-apps"}[5m]))
+                  ) > 0.5
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "`{{ $labels.service }}` p99 latency is {{ $value | humanizeDuration }}"
+                  description: "The 99th percentile request duration for `{{ $labels.service }}` in `{{ $labels.namespace }}` is above 500ms. Error rate can be zero throughout — queueing is not failure."
+              # Failures the service sees in its dependency, before they become its own 5xx.
+              # `timeout` and `error` are not HTTP statuses: the client records them when the
+              # request never got a response at all, which is what a timeout storm looks like.
+              - alert: SampleAppUpstreamDependencyErrors
+                expr: |
+                  (
+                    sum by (namespace, service, peer) (rate(http_client_requests_total{namespace="sample-apps",status=~"5..|timeout|error"}[5m]))
+                      / on (namespace, service, peer)
+                    sum by (namespace, service, peer) (rate(http_client_requests_total{namespace="sample-apps"}[5m]))
+                  ) > 0.05
+                  and on (namespace, service, peer)
+                  sum by (namespace, service, peer) (rate(http_client_requests_total{namespace="sample-apps"}[5m])) > 0.01
+                for: 1m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "`{{ $labels.service }}` is failing to reach `{{ $labels.peer }}`"
+                  description: "{{ $value | humanizePercentage }} of calls from `{{ $labels.service }}` to `{{ $labels.peer }}` are timing out or erroring. The blame belongs one hop downstream of the service that is paging."
+              # Every metric green, product broken. The stylesheet is served from a versioned
+              # path, so a stale ASSET_VERSION 404s every page's CSS while the error-rate rule
+              # sees nothing — 404 is not 5xx.
+              - alert: SampleAppStaleAssetRequests
+                expr: |
+                  sum by (namespace, service) (
+                    rate(http_server_requests_total{namespace="sample-apps",route="/assets/:version/app.css",status="404"}[5m])
+                  ) > 0.01
+                for: 1m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "`{{ $labels.service }}` is 404ing its own stylesheet"
+                  description: "The versioned asset path is returning 404. Every page renders unstyled and no 5xx, latency or restart signal moves. ASSET_VERSION does not match what the build shipped."
+              # settlement-worker serves no HTTP traffic — no request counter, no latency
+              # histogram, no readiness signal that means anything. Queue age is the only way to
+              # see it stop. 60s of no progress is well inside a benchmark run.
+              - alert: SampleAppSettlementQueueNotDraining
+                expr: max by (namespace, queue) (queue_oldest_job_age_seconds{namespace="sample-apps"}) > 60
+                for: 1m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "The `{{ $labels.queue }}` queue is not draining"
+                  description: "The oldest unprocessed job in `{{ $labels.queue }}` is {{ $value | humanizeDuration }} old. Orders are being accepted and never settled — the API looks perfectly healthy from outside."
+              # The process is gone or unreachable without CrashLooping: SIGKILL mid-drain, a
+              # wedged event loop, a NetworkPolicy that just changed.
+              - alert: SampleAppTargetDown
+                expr: up{job="kubernetes-pods",namespace="sample-apps"} == 0
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Prometheus cannot scrape `{{ $labels.pod }}`"
+                  description: "`{{ $labels.instance }}` in `{{ $labels.namespace }}` stopped answering scrapes. No restart is required for this — a process that stays up but stops serving looks identical."
+
+          # cert-manager is scraped already: the chart annotates its controller pod with
+          # prometheus.io/scrape, so the built-in `kubernetes-pods` job picks it up. No
+          # scrape_config is needed for any of this.
+          #
+          # Note the shape of the *_ready_status metrics: one series per condition value, the
+          # active one carrying 1. "Not ready" is therefore `{condition="True"} == 0`, never
+          # `{condition="False"} == 1` — the False series exists and reads 0 while the cert is
+          # perfectly healthy.
+          - name: cert-manager
+            rules:
+              # Let's Encrypt issues for 90 days and cert-manager renews at 30 days remaining.
+              # Below 21 days the renewal has already failed at least once, silently, and the
+              # clock is the only thing still moving. Shortest real cert in this cluster sits at
+              # ~34 days, so this is quiet today.
+              #
+              # Unreachable on demand, unlike everything else here — nothing can make a
+              # certificate expire faster. It earns its place by being the failure that gives
+              # weeks of warning and still takes people by surprise.
+              - alert: CertificateExpiringSoon
+                expr: (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 21
+                for: 1h
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Certificate `{{ $labels.namespace }}/{{ $labels.name }}` expires in {{ printf \"%.0f\" $value }} days"
+                  description: "Issued by `{{ $labels.issuer_name }}`. Renewal should have happened at 30 days remaining and did not. Every browser and every internal client starts failing TLS on the same day."
+              # The reproducible one: break the issuer, the DNS-01/HTTP-01 challenge, or the
+              # ACME account and a Certificate leaves Ready within minutes.
+              - alert: CertificateNotReady
+                expr: certmanager_certificate_ready_status{condition="True"} == 0
+                for: 15m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Certificate `{{ $labels.namespace }}/{{ $labels.name }}` is not Ready"
+                  description: "cert-manager cannot issue or renew this certificate through `{{ $labels.issuer_name }}`. The existing secret keeps serving until it expires, so nothing breaks yet — this is the whole warning."
+              # One broken ClusterIssuer takes every certificate that references it, across every
+              # namespace, on their own renewal schedules. The blast radius is the reason this is
+              # critical while a single Certificate is not.
+              - alert: ClusterIssuerNotReady
+                expr: certmanager_clusterissuer_ready_status{condition="True"} == 0
+                for: 15m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "ClusterIssuer `{{ $labels.name }}` is not Ready"
+                  description: "No certificate anywhere in the cluster can be issued or renewed through `{{ $labels.name }}` while this holds. Nothing breaks at the moment it happens; things break one by one as each certificate reaches its own renewal date."
+              - alert: CertManagerSyncErrors
+                expr: sum by (controller) (rate(certmanager_controller_sync_error_count[15m])) > 0
+                for: 15m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "cert-manager controller `{{ $labels.controller }}` is erroring on sync"
+                  description: "The `{{ $labels.controller }}` controller is failing its reconcile loop. ACME rate limits, a DNS provider rejecting the challenge, and a bad issuer secret all land here."
+
+          # Flux v2.9 controllers are scraped through the same annotation-driven job — no
+          # scrape_config needed. But `gotk_reconcile_condition`, the metric every "Flux
+          # reconcile failed" rule on the internet is written against, was REMOVED in Flux v2.4
+          # and does not exist here. What remains (gotk_reconcile_duration_seconds_count) counts
+          # reconciles without distinguishing success from failure, and Flux retries on failure,
+          # so the counter keeps moving through an outage. A failing HelmRelease is therefore
+          # invisible to metrics by construction.
+          #
+          # Actual reconcile FAILURES reach Alertmanager as events instead, through the
+          # notification-controller Provider and Alert in apps/base/systems/flux-alerts/.
+          # The two rules below cover only what events cannot: a controller that has stopped
+          # emitting anything at all, and so cannot report its own failure.
+          - name: flux
+            rules:
+              - alert: FluxControllerDown
+                expr: up{job="kubernetes-pods",namespace="flux-system"} == 0
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Flux controller `{{ $labels.pod }}` is not responding to scrapes"
+                  description: "GitOps has stopped for whatever this controller owns. The cluster keeps running the last applied state, so nothing appears wrong until someone merges a change and it never lands."
+              # Measured baseline: Kustomization 0.0125/s, GitRepository 0.033/s, HelmRelease and
+              # HelmChart 0.129/s — every kind reconciles continuously. Zero over 15 minutes means
+              # the controller is up but wedged, or someone suspended the resources and forgot.
+              - alert: FluxReconciliationStalled
+                expr: sum by (kind) (rate(gotk_reconcile_duration_seconds_count[15m])) == 0
+                for: 10m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Flux has stopped reconciling `{{ $labels.kind }}` objects"
+                  description: "No `{{ $labels.kind }}` reconcile has been recorded for 15 minutes while the controller is still answering scrapes. Either it is wedged, or these resources are suspended — `flux get {{ $labels.kind }} --all-namespaces` says which."
+
+          # Postgres is the agent's incident memory and Redis its conversation cache, so both
+          # are failure modes of the agent, not just of the cluster.
+          #
+          # Metric names below were confirmed by running the two exporter images against a real
+          # postgres and a real redis locally, not read from documentation — twice already in
+          # this file a metric that "obviously" exists turned out not to.
+          #
+          # Neither exporter is deployed yet at the time these were written, so unlike every
+          # other rule here they have NOT been evaluated against the live Prometheus. Do that
+          # once the sidecars roll out.
+          - name: postgres
+            rules:
+              - alert: PostgresDown
+                expr: pg_up{namespace="postgresql"} == 0
+                for: 2m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Postgres exporter cannot reach the database"
+                  description: "`pg_up` is 0. The agent loses its incident memory and the sample apps stop writing orders. If this appears immediately after enabling metrics and the database is plainly healthy, the exporter cannot authenticate — check the sidecar log, not the database."
+              # Reachable by scaling sample-apps replicas up until the pool is exhausted.
+              # Aggregated on namespace+pod rather than the exporter's own `server` label:
+              # both come from the same scrape target, and not every collector emits `server`.
+              - alert: PostgresConnectionsNearLimit
+                expr: |
+                  sum by (namespace, pod) (pg_stat_activity_count{namespace="postgresql"})
+                    / on (namespace, pod)
+                  sum by (namespace, pod) (pg_settings_max_connections{namespace="postgresql"})
+                    > 0.8
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Postgres is at {{ $value | humanizePercentage }} of max_connections"
+                  description: "New connections start being refused at 100%, and the first thing to fail is whatever reconnects next — usually not the workload that exhausted the pool."
+              - alert: PostgresDeadlocks
+                expr: sum by (namespace, pod, datname) (rate(pg_stat_database_deadlocks{namespace="postgresql"}[5m])) > 0
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Postgres is resolving deadlocks in `{{ $labels.datname }}`"
+                  description: "Postgres broke a deadlock by killing one transaction. The application sees a failed query, retries, and usually succeeds — so this is invisible from the app side and shows up as unexplained latency."
+              # The classic quiet killer: a transaction left open holds its locks and pins the
+              # vacuum horizon while doing nothing at all. 120s rather than a production 5-10m
+              # so it is reachable inside a benchmark run.
+              - alert: PostgresIdleInTransaction
+                expr: max by (namespace, pod, datname) (pg_stat_activity_max_tx_duration{namespace="postgresql",state="idle in transaction"}) > 120
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "A transaction has been idle in `{{ $labels.datname }}` for {{ $value | humanizeDuration }}"
+                  description: "An open transaction is doing nothing while holding its locks and blocking vacuum. Nothing errors; writes that touch the same rows simply wait."
+
+          - name: redis
+            rules:
+              - alert: RedisDown
+                expr: redis_up{namespace="redis"} == 0
+                for: 2m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Redis exporter cannot reach Redis"
+                  description: "The agent's conversation cache is gone. Investigations still run, but every one of them starts from nothing."
+              # No `used / maxmemory` ratio rule here on purpose: `redis_memory_max_bytes` reads
+              # 0 when maxmemory is unset, which is the default and is what this deployment
+              # runs — the ratio would divide by zero and the rule would sit silently inert
+              # forever. Eviction is the damage, so measure the damage directly; unbounded
+              # growth with no maxmemory ends as an OOMKill, which KubernetesContainerOomKiller
+              # already catches.
+              - alert: RedisEvictingKeys
+                expr: sum by (namespace, pod) (rate(redis_evicted_keys_total{namespace="redis"}[5m])) > 0
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Redis is evicting keys"
+                  description: "Redis is at its memory ceiling and dropping keys to stay under it. The agent loses conversation context mid-investigation and cannot tell an evicted thread from a new one — it just starts answering without history."
+              - alert: RedisRejectingConnections
+                expr: sum by (namespace, pod) (rate(redis_rejected_connections_total{namespace="redis"}[5m])) > 0
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Redis is refusing new connections"
+                  description: "`maxclients` is reached. Clients already connected keep working, so this looks like a partial outage affecting only whatever restarted most recently."
     alertmanager:
       enabled: false
     prometheus-pushgateway:

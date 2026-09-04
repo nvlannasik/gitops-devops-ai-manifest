@@ -7,6 +7,14 @@
 # above it sets that namespace on everything; `sidecar.rules.searchNamespace`
 # in release.yaml is what points the sidecar here, and the chart's ClusterRole
 # already grants configmap reads cluster-wide.
+#
+# Thresholds are tuned for reproducing incidents, not for production parity:
+# 0.01 lines/sec is one line every 100 seconds, so a handful of error lines is
+# enough to fire. `for: 2m` keeps a benchmark iteration short.
+#
+# Log shape comes from `createLogger` in @sample-app/platform: one JSON object
+# per line with `ts`, `level`, `service`, `version`, `msg`, and `err` when an
+# error was attached. Every `msg =` below is a string that exists in the source.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,15 +29,15 @@ data:
         rules:
           # The 5xx that exists in logs. `handleError` in the sample apps'
           # shared HTTP server does finish(500) and logs this exact message on
-          # the same path, so this and Prometheus' HighErrorRate see one event
-          # from two sides: the counter says how often, the log says which
+          # the same path, so this and Prometheus' SampleAppHighErrorRate see one
+          # event from two sides: the counter says how often, the log says which
           # route and which error.
           - alert: AppUnhandledRouteError
             expr: |
               sum by (namespace, service, pod) (
                 rate({namespace="sample-apps"} | json | msg = "unhandled route error" [5m])
-              ) > 0.05
-            for: 5m
+              ) > 0.01
+            for: 2m
             labels:
               severity: warning
               source: loki
@@ -37,19 +45,74 @@ data:
               summary: "Unhandled route errors in `{{ $labels.service }}` at `Dev cluster`"
               description: "`{{ $labels.service }}` is returning 500s from pod `{{ $labels.pod }}`. The route and the exception are in the log line, not in the counter. :pepe_susq:"
 
-          # What no counter can see. settlement-worker serves no HTTP traffic,
-          # so http_server_requests_total never moves for it — a failing batch
-          # is visible only here. `msg !=` keeps this from double-firing with
-          # the alert above.
+          # The service refused to start. This is the one case Prometheus is
+          # structurally blind to: the process exits before it ever serves
+          # /metrics, so there is no series to alert on and no counter to move —
+          # only kube_pod_container_status_restarts_total, which says a container
+          # died without saying why. A wrong DB_PASSWORD, an unset required
+          # variable, or migrations that were never run all land here.
+          - alert: AppRefusedToStart
+            expr: |
+              sum by (namespace, service, pod) (
+                rate({namespace="sample-apps"} | json | msg =~ ".*refusing to start.*|schema is behind the code|migration failed" [5m])
+              ) > 0
+            for: 2m
+            labels:
+              severity: critical
+              source: loki
+            annotations:
+              summary: "`{{ $labels.service }}` is refusing to start at `Dev cluster`"
+              description: "Pod `{{ $labels.pod }}` aborted during boot — bad config, an out-of-date schema, or a failed migration. It never reached /metrics, so every Prometheus rule about this service is silent by construction. A config failure is logged before the logger exists, so `service` is empty on those lines — go by the pod. :hmmmmm:"
+
+          # In-flight requests killed on shutdown. The pod is draining, the
+          # kubelet's grace period runs out first, and open connections are cut.
+          # The client sees a connection reset; no 5xx is ever recorded, because
+          # the response was never written. Logged at warn, not error, so
+          # AppErrorLogSpike cannot see it either.
+          - alert: AppShutdownDrainTimeout
+            expr: |
+              sum by (namespace, service, pod) (
+                rate({namespace="sample-apps"} | json | msg = "drain timeout reached, closing open connections" [10m])
+              ) > 0
+            for: 2m
+            labels:
+              severity: warning
+              source: loki
+            annotations:
+              summary: "`{{ $labels.service }}` is being killed mid-drain at `Dev cluster`"
+              description: "Pod `{{ $labels.pod }}` hit its drain timeout and cut open connections. GRACEFUL_SHUTDOWN_MS is above terminationGracePeriodSeconds, so every rollout drops in-flight requests as resets that no error metric counts. :pedro:"
+
+          # settlement-worker cannot reach its queue. It serves no HTTP traffic,
+          # so no request counter, latency histogram or readiness signal moves.
+          # queue_oldest_job_age_seconds eventually rises, but this says why
+          # several minutes earlier.
+          - alert: AppQueueClaimFailing
+            expr: |
+              sum by (namespace, service, pod) (
+                rate({namespace="sample-apps"} | json | msg = "failed to claim a batch" [5m])
+              ) > 0.01
+            for: 2m
+            labels:
+              severity: warning
+              source: loki
+            annotations:
+              summary: "`{{ $labels.service }}` cannot claim work from the queue"
+              description: "Pod `{{ $labels.pod }}` is failing to claim settlement batches — the database is unreachable, or the claim query is erroring. Orders keep being accepted; none of them settle. :pepe_susq:"
+
+          # What no counter can see, and what the four rules above have not
+          # already named. settlement-worker serves no HTTP traffic, so
+          # http_server_requests_total never moves for it — a failing batch is
+          # visible only here. The `msg !=` chain keeps this from double-firing
+          # with every specific rule above it; add to it when adding a rule.
           - alert: AppErrorLogSpike
             expr: |
               sum by (namespace, service, pod) (
-                rate({namespace="sample-apps"} | json | level = "error" | msg != "unhandled route error" [5m])
-              ) > 0.05
-            for: 5m
+                rate({namespace="sample-apps"} | json | level = "error" | msg != "unhandled route error" | msg != "failed to claim a batch" | msg != "migration failed" | msg != "schema is behind the code" | msg !~ ".*refusing to start.*" [5m])
+              ) > 0.01
+            for: 2m
             labels:
               severity: warning
               source: loki
             annotations:
               summary: "Error log spike in `{{ $labels.service }}` at `Dev cluster`"
-              description: "Pod `{{ $labels.pod }}` is logging errors that never became an HTTP status. Read the log, there is no metric for this one. :pedro:"
+              description: "Pod `{{ $labels.pod }}` is logging errors that never became an HTTP status and that no more specific rule claimed. Read the log, there is no metric for this one. :pedro:"

@@ -19,6 +19,12 @@ spec:
       retries: 3
     createNamespace: true
   values:
+    # The metrics exporter below runs a non-Bitnami image. Bitnami charts refuse to render an
+    # unrecognised image without this flag, and the refusal is a HelmRelease render error, not
+    # a runtime one — Flux reports it, no pod is ever created.
+    global:
+      security:
+        allowInsecureImages: true
     architecture: "standalone"
     image:
       registry: registry-1.docker.io
@@ -35,3 +41,35 @@ spec:
       limits:
         cpu: 200m
         memory: 128Mi
+    # Prometheus reads this pod through the chart's built-in `kubernetes-pods` job, which keys
+    # off POD annotations. Bitnami only annotates the `postgresql-metrics` SERVICE, and the dev
+    # overlay disables the `kubernetes-service-endpoints` job that would have read it — so
+    # metrics.enabled alone produces an exporter nobody scrapes. These three lines are what
+    # actually connect it.
+    primary:
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+    metrics:
+      enabled: true
+      # NOT the chart default (bitnami/postgres-exporter). That image runs in FIPS 140-only
+      # mode and refuses HMAC keys shorter than 112 bits, so against this cluster's
+      # 8-character password it never connects — it reports `pg_up 0` and nothing else, with
+      # the real reason buried in the sidecar's log. Verified by running both images against
+      # the same database: Bitnami gives pg_up 0 at 8 bytes and pg_up 1 at 25, upstream gives
+      # pg_up 1 at 8. Swapping the image is the cheap half of that fix; the password is shared
+      # with devops-ai-agent and the sample apps and cannot be rotated from this repo alone.
+      image:
+        registry: quay.io
+        repository: prometheuscommunity/postgres-exporter
+        tag: v0.19.0
+      # The chart's `nano` preset asks for 100m CPU and 128Mi — as much as postgres itself is
+      # limited to here, on a node where postgres is already throttled 36% of the time.
+      resourcesPreset: "none"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi

@@ -21,8 +21,8 @@ spec:
 
       llm:
         routes:
-          heavy: [private-llm, chatgpt, haiku]
-          light: [deepseek]
+          heavy: [private-llm-chatgpt, chatgpt, haiku]
+          light: [private-llm, deepseek]
 
       env:
         NODE_ENV: "dev"

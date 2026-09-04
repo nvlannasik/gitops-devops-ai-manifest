@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.1.0"
+      version: "0.2.0"
   interval: 1m
   install:
     remediation:
@@ -29,8 +29,14 @@ spec:
         kind: Deployment
   values:
     global:
+      # The redis subchart's exporter runs a non-Bitnami image (its own default tag is gone
+      # from the registry — see the `redis.metrics` block below). Bitnami charts refuse to
+      # render an unrecognised image without this, and the refusal surfaces as a Flux
+      # HelmRelease failure, not as a bad pod. Subcharts read only their own values plus
+      # `global`, so it has to live here rather than under `redis:`.
+      security:
+        allowInsecureImages: true
       sqs:
-        requestQueue: "private-llm-request.fifo"
         responseQueue: "private-llm-response.fifo"
         requestDlq: "private-llm-request-dlq.fifo"
         gitopsRequestQueue: "gitops-request.fifo"
@@ -118,8 +124,14 @@ spec:
             apiKeyKey: DEEPSEEK_KEY
           - name: private-llm
             kind: private-llm
+            requestQueue: "private-llm-request.fifo"
             contextTokens: 128000
             model: agus
+          - name: private-llm-chatgpt
+            kind: private-llm
+            requestQueue: "private-llm-chatgpt-request.fifo"
+            contextTokens: 128000
+            model: gpt-5-nano-2025-08-07
         routes: {}
         sqs:
           timeoutSeconds: 240
@@ -310,3 +322,28 @@ spec:
           size: 1Gi
       image:
         tag: latest
+      metrics:
+        enabled: true
+        # NOT the chart default (bitnami/redis-exporter:1.70.0-debian-12-r2). That tag is gone
+        # from the registry — `docker manifest inspect` returns not-found — so metrics.enabled
+        # with default values yields an ImagePullBackOff sidecar and a Redis pod that never
+        # becomes Ready again. oliver006 is the upstream image Bitnami repackages; same binary,
+        # same metric names.
+        image:
+          registry: docker.io
+          repository: oliver006/redis_exporter
+          tag: v1.70.0
+        # Unlike postgres above, no podAnnotations are needed: this chart already defaults
+        # metrics.podAnnotations to prometheus.io/scrape + port 9121 on the master pod, which
+        # the built-in `kubernetes-pods` job reads directly.
+        #
+        # The `nano` preset asks for 100m CPU and 128Mi on a Redis already throttled 33% of
+        # the time.
+        resourcesPreset: "none"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
