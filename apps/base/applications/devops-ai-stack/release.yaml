@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.2.0"
+      version: "0.2.1"
   interval: 1m
   install:
     remediation:
@@ -122,9 +122,10 @@ spec:
             model: deepseek-v4-flash
             existingSecret: devops-agent-secret
             apiKeyKey: DEEPSEEK_KEY
-          - name: private-llm
+          - name: private-llm-agus
             kind: private-llm
             requestQueue: "private-llm-request.fifo"
+            externalWorker: true
             contextTokens: 128000
             model: agus
           - name: private-llm-chatgpt
