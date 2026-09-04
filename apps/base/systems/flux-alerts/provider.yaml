@@ -1,0 +1,18 @@
+# Flux reconcile failures cannot be detected from metrics on this version:
+# `gotk_reconcile_condition` was removed in Flux v2.4, and the counter that remains
+# (`gotk_reconcile_duration_seconds_count`) increments on retries too, so it keeps moving
+# straight through a failing HelmRelease. notification-controller's event stream is the only
+# thing that knows a reconcile failed.
+#
+# Pointing it at Alertmanager rather than straight at the agent's webhook keeps one entry point
+# for everything: the existing catch-all route in the dev overlay already forwards to
+# devops-ai-agent, so Flux failures arrive grouped, deduplicated and silenceable like every
+# other alert — and a Slack receiver added later gets them for free.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: alertmanager
+  namespace: flux-system
+spec:
+  type: alertmanager
+  address: http://alertmanager.monitoring.svc.cluster.local:9093/api/v2/alerts

@@ -1,0 +1,35 @@
+# `eventSeverity: error` only. Flux emits an info event for every successful reconcile of every
+# object; at the reconcile rates this cluster runs (HelmChart and HelmRelease at ~0.13/s each)
+# forwarding those would bury the agent in successful deploys.
+#
+# `namespace: "*"` on each source: HelmReleases live in flux-system and flux-app both, and a
+# selector that misses a namespace fails silently — it forwards nothing rather than erroring.
+#
+# The alerts this produces carry no `for:` and no threshold, unlike every Prometheus rule here.
+# A failed reconcile is not a rate that crosses a line, it is a discrete event; the resolve comes
+# from Alertmanager's resolve_timeout, not from a recovery event.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: flux-reconcile-failures
+  namespace: flux-system
+spec:
+  providerRef:
+    name: alertmanager
+  eventSeverity: error
+  eventSources:
+    - kind: HelmRelease
+      name: "*"
+      namespace: "*"
+    - kind: Kustomization
+      name: "*"
+      namespace: "*"
+    - kind: GitRepository
+      name: "*"
+      namespace: "*"
+    - kind: HelmRepository
+      name: "*"
+      namespace: "*"
+    - kind: HelmChart
+      name: "*"
+      namespace: "*"
