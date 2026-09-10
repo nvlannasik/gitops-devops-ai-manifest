@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.2.1"
+      version: "0.3.0"
   interval: 1m
   install:
     remediation:
@@ -132,6 +132,13 @@ spec:
             kind: private-llm
             requestQueue: "private-llm-chatgpt-request.fifo"
             contextTokens: 128000
+            # Must equal devops-llm-worker.llm.maxTokens below. The agent sends no ceiling over
+            # SQS — the worker holds its own — so this value only reserves reply window. Left at
+            # the chart default of 8096 while the worker emits up to 16384, replies past 8096
+            # were silently truncated: nothing errors, because the reserve is a promise the agent
+            # makes to itself. The chart refuses to render on the mismatch, which is how this was
+            # found.
+            maxTokens: 16384
             model: gpt-5-nano-2025-08-07
         routes: {}
         sqs:
@@ -253,6 +260,13 @@ spec:
         readOnly: true
         allowWrite: true
         allowFluxReconcile: true
+        # get/list on every API group, for the CRD cross-check in k8s_find_unused_resources:
+        # an operator that references a ConfigMap BY NAME leaves no ownerReference and no pod
+        # reference, so reading the custom resources is the only way to see it before the tool
+        # calls that ConfigMap unused. Read-only — this flag emits no mutating verb at any
+        # value. The chart already defaults it to true; stated here because a cluster-wide read
+        # grant belongs in the repo someone reviews, not inherited from a chart default.
+        readAllCustomResources: true
 
       resources: 
         limits: 
