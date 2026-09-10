@@ -127,7 +127,7 @@ spec:
             requestQueue: "private-llm-request.fifo"
             externalWorker: true
             contextTokens: 128000
-            maxTokens: 64000
+            maxTokens: 32000
             model: agus
           - name: private-llm-chatgpt
             kind: private-llm
