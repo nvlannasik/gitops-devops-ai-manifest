@@ -140,3 +140,10 @@ spec:
               - source_labels: [__meta_kubernetes_endpoints_name]
                 regex: "monitoring-prometheus-prometheus-node-exporter"
                 action: keep
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 254Mi
