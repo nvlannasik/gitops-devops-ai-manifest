@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.3.0"
+      version: "0.4.0"
   interval: 1m
   install:
     remediation:
@@ -261,6 +261,19 @@ spec:
         readOnly: true
         allowWrite: true
         allowFluxReconcile: true
+        # `delete` on ConfigMaps, Services, ServiceAccounts, Deployments and StatefulSets, for
+        # k8s_delete_orphan. Deliberately NOT folded into allowWrite above: that one grants
+        # patch/update plus delete-on-pods, and all of those are recoverable — a patched
+        # Deployment can be patched back, a deleted pod is recreated by its controller. These
+        # objects have no controller behind them, so nothing recreates what this removes.
+        #
+        # What stands between the grant and a mistake is not this line: the tool refuses
+        # anything Flux or Helm declares, anything an ownerReference explains, any workload
+        # still running replicas, and anything younger than 14 days — and it stores the
+        # object's manifest on the remediation row and in the Slack thread immediately before
+        # deleting, which is the undo. Secrets and PVCs are excluded from the grant AND refused
+        # by the tool: a Secret's backup is its credentials, a PVC's manifest is not its data.
+        allowOrphanDelete: true
         # get/list on every API group, for the CRD cross-check in k8s_find_unused_resources:
         # an operator that references a ConfigMap BY NAME leaves no ownerReference and no pod
         # reference, so reading the custom resources is the only way to see it before the tool
