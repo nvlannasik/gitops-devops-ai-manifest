@@ -23,6 +23,8 @@ spec:
         value: "0"
       - name: LOADGEN_CHECKOUT_RATIO
         value: "0.3"
+      - name: FAULT_TARGETS
+        value: storefront=http://storefront.sample-apps.svc.cluster.local:3000,orders-api=http://orders-api.svc.cluster.local:3000,checkout=http://checkout.sample-apps.svc.cluster.local:3000
       - name: LOADGEN_AUTOSTART
         value: "false"
       - name: LOADGEN_UI_COOKIE_SECURE
