@@ -32,14 +32,13 @@ spec:
           secretKeyRef:
             name: orders-api-secret
             key: DB_PASSWORD
-      # Registers /control/fault (loadgen's Faults panel). Same secret on loadgen, storefront and
-      # orders-api. optional: a missing secret leaves the route off instead of blocking the pod.
+      # Registers /control/fault (loadgen's Faults panel). Deliberately the loadgen UI password:
+      # the one person who can open the panel is the one who may arm a fault.
       - name: FAULT_CONTROL_TOKEN
         valueFrom:
           secretKeyRef:
-            name: fault-control-secret
-            key: FAULT_CONTROL_TOKEN
-            optional: true
+            name: loadgen-secret
+            key: LOADGEN_UI_PASSWORD
     secret:
       enabled: false
     replicaCount: 1

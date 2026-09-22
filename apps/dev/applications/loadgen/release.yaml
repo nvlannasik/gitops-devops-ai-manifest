@@ -29,9 +29,8 @@ spec:
       - name: FAULT_CONTROL_TOKEN
         valueFrom:
           secretKeyRef:
-            name: fault-control-secret
-            key: FAULT_CONTROL_TOKEN
-            optional: true
+            name: loadgen-secret
+            key: LOADGEN_UI_PASSWORD
       - name: LOADGEN_AUTOSTART
         value: "false"
       - name: LOADGEN_UI_COOKIE_SECURE
