@@ -24,7 +24,14 @@ spec:
       - name: LOADGEN_CHECKOUT_RATIO
         value: "0.3"
       - name: FAULT_TARGETS
-        value: storefront=http://storefront.sample-apps.svc.cluster.local:3000,orders-api=http://orders-api.svc.cluster.local:3000,checkout=http://checkout.sample-apps.svc.cluster.local:3000
+        # Only services that declare FAULT_KNOBS: checkout-gateway has none (GATEWAY_TIMEOUT_MS is storefront's).
+        value: storefront=http://storefront.sample-apps.svc.cluster.local:3000,orders-api=http://orders-api.sample-apps.svc.cluster.local:3000
+      - name: FAULT_CONTROL_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: fault-control-secret
+            key: FAULT_CONTROL_TOKEN
+            optional: true
       - name: LOADGEN_AUTOSTART
         value: "false"
       - name: LOADGEN_UI_COOKIE_SECURE

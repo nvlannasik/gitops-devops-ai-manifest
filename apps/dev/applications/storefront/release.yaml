@@ -26,6 +26,14 @@ spec:
           secretKeyRef:
             name: checkout-gateway-secret
             key: GATEWAY_AUTH_TOKEN
+      # Registers /control/fault (loadgen's Faults panel). Same secret on loadgen, storefront and
+      # orders-api. optional: a missing secret leaves the route off instead of blocking the pod.
+      - name: FAULT_CONTROL_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: fault-control-secret
+            key: FAULT_CONTROL_TOKEN
+            optional: true
     secret:
       enabled: false
     replicaCount: 1
