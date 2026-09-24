@@ -31,7 +31,8 @@ spec:
         configmap.reloader.stakater.com/reload: oauth2-proxy
         secret.reloader.stakater.com/reload: oauth2-proxy
       existingSecret: oauth2-proxy-secrets
-
+    configFile: |-
+      ## Initial configuration for oauth2-proxy
     deploymentAnnotations:
       configmap.reloader.stakater.com/reload: oauth2-proxy
       secret.reloader.stakater.com/reload: oauth2-proxy
