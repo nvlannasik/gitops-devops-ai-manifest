@@ -32,7 +32,9 @@ spec:
         secret.reloader.stakater.com/reload: oauth2-proxy
       existingSecret: oauth2-proxy-secrets
     configFile: |-
-      ## Initial configuration for oauth2-proxy
+      email_domains = ["annasiknoval@gmail.com"]
+      upstreams = ["file:///dev/null"]
+
     deploymentAnnotations:
       configmap.reloader.stakater.com/reload: oauth2-proxy
       secret.reloader.stakater.com/reload: oauth2-proxy
