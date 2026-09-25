@@ -255,6 +255,7 @@ spec:
         maxScaleDelta: 5
       env:
         NODE_ENV: "dev"
+        MIN_ORPHAN_AGE_DAYS: 0
 
       rbac:
         create: true
