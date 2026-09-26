@@ -21,6 +21,27 @@ spec:
   values:
     nameOverride: "fluentbit"
     fullnameOverride: "fluentbit"
+
+    # Scraped so that the log pipeline is observable by something other than itself. The
+    # SERVICE block below already runs the HTTP server these read from; nothing new is
+    # exposed, and this needs no scrape_config — the chart's annotation-driven
+    # `kubernetes-pods` job picks it up, same as cert-manager.
+    #
+    # `path` is required and easy to get wrong: /api/v1/metrics is fluentbit's own JSON
+    # shape, and Prometheus scraping it fails the target rather than reading zeroes. The
+    # Prometheus exposition lives at /api/v1/metrics/prometheus. Verified against a live
+    # pod: fluentbit_output_proc_records_total{name="loki.0"} is the counter
+    # LogShipperStalled (prometheus/release.yaml) alerts on.
+    #
+    # Why this matters more than a dashboard: on 2026-09-24 both pods wedged for 36 hours
+    # while `/api/v1/health` kept answering 200 and the kubelet kept them 1/1 Ready. The
+    # counters were frozen and the timestamps beside them were current — the process was
+    # alive and shipping nothing. Without these annotations there is no metric anywhere in
+    # the cluster that can tell that apart from a quiet night.
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "2020"
+      prometheus.io/path: "/api/v1/metrics/prometheus"
     config:
       service: |
         [SERVICE]

@@ -460,6 +460,50 @@ spec:
                 annotations:
                   summary: "Redis is refusing new connections"
                   description: "`maxclients` is reached. Clients already connected keep working, so this looks like a partial outage affecting only whatever restarted most recently."
+
+          # The outage this cluster had on 2026-09-24 and could not see: both fluentbit pods
+          # stayed Running and 1/1 Ready for 36 hours while their pipelines were wedged, and
+          # Loki's newest line aged the whole time. The readiness probe is `Health_Check On`,
+          # which measures the output's ERROR and RETRY rates over a window — a pipeline that
+          # has stopped producing chunks has neither, so a dead shipper reports perfect health.
+          # It was found by hand, and only because an agent investigation kept coming back with
+          # no logs and the third guess was to ask Loki what it held for ANY namespace.
+          #
+          # This CANNOT be a Loki Ruler rule. A log-based alert on "no logs are arriving"
+          # evaluates against the data that stopped arriving, so it is blind to its own subject
+          # and would have sat in exactly the same silence. It has to be a Prometheus rule
+          # against the shipper's own counters — hence the podAnnotations on the fluentbit
+          # HelmRelease, which put it on the annotation-driven `kubernetes-pods` job (same
+          # mechanism as cert-manager; no scrape_config needed, and the dev overlay's explicit
+          # `serverFiles.prometheus.yml.scrape_configs` list does not touch that job).
+          - name: logging-pipeline
+            rules:
+              # `or absent(...)` is load-bearing, not defensive padding. When the shipper is
+              # unscrapable — pod gone, node gone, metrics endpoint dead — the rate query
+              # returns an EMPTY vector, and `== 0` over empty is not a firing alert, it is no
+              # alert at all. Without the second half this rule covers "wedged" and misses
+              # "gone", which is the louder half of the same failure.
+              #
+              # Per-pod, not one cluster-wide sum: one node's shipper wedging is the more
+              # insidious shape, because half the cluster's logs vanish while the other half
+              # keeps arriving, so every query still returns something and looks answered.
+              #
+              # 15m of zero is never idle here — flux, longhorn and kube-system chatter
+              # continuously, and the quietest measured window still ships thousands of lines.
+              - alert: LogShipperStalled
+                expr: |
+                  sum by (pod) (rate(fluentbit_output_proc_records_total[15m])) == 0
+                  or absent(fluentbit_output_proc_records_total)
+                for: 10m
+                labels:
+                  severity: critical
+                annotations:
+                  # Conditional because the two halves of the expr carry different labels: the
+                  # rate half is per-pod, the absent() half is a bare 1 with no labels at all,
+                  # so an unguarded {{ $labels.pod }} renders an empty backtick pair on exactly
+                  # the branch that means "the shipper is gone".
+                  summary: "No logs have reached Loki{{ if $labels.pod }} from `{{ $labels.pod }}`{{ end }} for 15m"
+                  description: "fluentbit has shipped zero records to Loki for 15 minutes. Its pod is almost certainly still Running and Ready — the health check cannot see this failure. Until it is fixed every Loki query returns an empty result, which reads as `no errors in the logs` rather than `no logs at all`. Remediation is `kubectl -n monitoring rollout restart ds/fluentbit`. :pepe_susq:"
     alertmanager:
       enabled: false
     prometheus-pushgateway:
