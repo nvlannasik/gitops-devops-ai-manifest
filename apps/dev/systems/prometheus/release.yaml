@@ -26,6 +26,11 @@ spec:
         enabled: false
       kubernetes-service-endpoints:
         enabled: false
+      # Replaced by the custom `kubernetes-cadvisor` job below (it adds `node`). Left on, every
+      # container had two usage series and anything summing them doubled — measured 2026-09-28,
+      # k8s_recommend_resources reported CPU at 2x.
+      kubernetes-nodes-cadvisor:
+        enabled: false
 
     serverFiles:
       prometheus.yml:
