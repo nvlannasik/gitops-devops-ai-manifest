@@ -112,48 +112,7 @@ spec:
               # A rollout that was accepted but never converged: the controller has not observed
               # the current spec generation. Distinct from replicas-not-ready — this one means
               # the Deployment object itself is stuck, not the pods under it.
-              - alert: KubernetesDeploymentRolloutStuck
-                expr: |
-                  kube_deployment_status_observed_generation
-                    != on (namespace, deployment) kube_deployment_metadata_generation
-                for: 2m
-                labels:
-                  severity: warning
-                annotations:
-                  summary: "Rollout of `{{ $labels.namespace }}/{{ $labels.deployment }}` is not converging"
-                  description: "The Deployment spec changed but the controller has not caught up for 2 minutes. Either the rollout is blocked on a failing probe or the controller is wedged."
-              - alert: KubernetesDeploymentNotReady
-                expr: |
-                  kube_deployment_spec_replicas
-                    - on (namespace, deployment) kube_deployment_status_replicas_ready
-                    > 0
-                for: 2m
-                labels:
-                  severity: warning
-                annotations:
-                  summary: "Deployment `{{ $labels.namespace }}/{{ $labels.deployment }}` has replicas that never became ready"
-                  description: "{{ $value }} replica(s) are not ready. Pod phase stays Running in this state, so no phase-based rule sees it — the readiness probe is the thing to look at."
-              # Every pod can be healthy and the Service still serve nothing: a selector that
-              # matches no labels looks exactly like this and is invisible to every pod-level rule.
-              #
-              # `unless`, not `== 0`: an EndpointSlice with no ready address emits no
-              # kube_endpointslice_endpoints series at all, and `== 0` cannot match a series that
-              # does not exist. kube_endpointslice_info survives, so the set difference is the
-              # only form that sees an empty slice.
-              #
-              # Scoped to sample-apps because four slices elsewhere (nuclio, mongodb, traefik,
-              # devops-agent-redis) are deliberately empty and would stand permanently firing.
-              - alert: KubernetesServiceHasNoReadyEndpoints
-                expr: |
-                  sum by (namespace, endpointslice) (kube_endpointslice_info{namespace="sample-apps"})
-                    unless on (namespace, endpointslice)
-                  sum by (namespace, endpointslice) (kube_endpointslice_endpoints{namespace="sample-apps",ready="true"})
-                for: 1m
-                labels:
-                  severity: critical
-                annotations:
-                  summary: "EndpointSlice `{{ $labels.namespace }}/{{ $labels.endpointslice }}` has no ready endpoints"
-                  description: "This Service is a black hole — it accepts connections and routes them nowhere. The slice name is `<service>-<hash>`. Check the selector against the pod labels before assuming the pods are down."
+
               - alert: WorkerNodeIsNotReady
                 expr: kube_node_status_condition{condition="Ready", status="true"} == 0
                 for: 3m
@@ -229,41 +188,7 @@ spec:
                 annotations:
                   summary: "`{{ $labels.service }}` p99 latency is {{ $value | humanizeDuration }}"
                   description: "The 99th percentile request duration for `{{ $labels.service }}` in `{{ $labels.namespace }}` is above 500ms. Error rate can be zero throughout — queueing is not failure."
-              # Failures the service sees in its dependency, before they become its own 5xx.
-              # `timeout` and `error` are not HTTP statuses: the client records them when the
-              # request never got a response at all, which is what a timeout storm looks like.
-              - alert: SampleAppUpstreamDependencyErrors
-                expr: |
-                  (
-                    sum by (namespace, service, peer) (rate(http_client_requests_total{namespace="sample-apps",status=~"5..|timeout|error"}[5m]))
-                      / on (namespace, service, peer)
-                    sum by (namespace, service, peer) (rate(http_client_requests_total{namespace="sample-apps"}[5m]))
-                  ) > 0.05
-                  and on (namespace, service, peer)
-                  sum by (namespace, service, peer) (rate(http_client_requests_total{namespace="sample-apps"}[5m])) > 0.01
-                for: 1m
-                labels:
-                  severity: warning
-                annotations:
-                  summary: "`{{ $labels.service }}` is failing to reach `{{ $labels.peer }}`"
-                  description: "{{ $value | humanizePercentage }} of calls from `{{ $labels.service }}` to `{{ $labels.peer }}` are timing out or erroring. The blame belongs one hop downstream of the service that is paging."
-              # Every metric green, product broken. The stylesheet is served from a versioned
-              # path, so a stale ASSET_VERSION 404s every page's CSS while the error-rate rule
-              # sees nothing — 404 is not 5xx.
-              - alert: SampleAppStaleAssetRequests
-                expr: |
-                  sum by (namespace, service) (
-                    rate(http_server_requests_total{namespace="sample-apps",route="/assets/:version/app.css",status="404"}[5m])
-                  ) > 0.01
-                for: 1m
-                labels:
-                  severity: warning
-                annotations:
-                  summary: "`{{ $labels.service }}` is 404ing its own stylesheet"
-                  description: "The versioned asset path is returning 404. Every page renders unstyled and no 5xx, latency or restart signal moves. ASSET_VERSION does not match what the build shipped."
-              # settlement-worker serves no HTTP traffic — no request counter, no latency
-              # histogram, no readiness signal that means anything. Queue age is the only way to
-              # see it stop. 60s of no progress is well inside a benchmark run.
+
               - alert: SampleAppSettlementQueueNotDraining
                 expr: max by (namespace, queue) (queue_oldest_job_age_seconds{namespace="sample-apps"}) > 60
                 for: 1m
@@ -272,35 +197,9 @@ spec:
                 annotations:
                   summary: "The `{{ $labels.queue }}` queue is not draining"
                   description: "The oldest unprocessed job in `{{ $labels.queue }}` is {{ $value | humanizeDuration }} old. Orders are being accepted and never settled — the API looks perfectly healthy from outside."
-              # The process is gone or unreachable without CrashLooping: SIGKILL mid-drain, a
-              # wedged event loop, a NetworkPolicy that just changed.
-              - alert: SampleAppTargetDown
-                expr: up{job="kubernetes-pods",namespace="sample-apps"} == 0
-                for: 1m
-                labels:
-                  severity: critical
-                annotations:
-                  summary: "Prometheus cannot scrape `{{ $labels.pod }}`"
-                  description: "`{{ $labels.instance }}` in `{{ $labels.namespace }}` stopped answering scrapes. No restart is required for this — a process that stays up but stops serving looks identical."
 
-          # cert-manager is scraped already: the chart annotates its controller pod with
-          # prometheus.io/scrape, so the built-in `kubernetes-pods` job picks it up. No
-          # scrape_config is needed for any of this.
-          #
-          # Note the shape of the *_ready_status metrics: one series per condition value, the
-          # active one carrying 1. "Not ready" is therefore `{condition="True"} == 0`, never
-          # `{condition="False"} == 1` — the False series exists and reads 0 while the cert is
-          # perfectly healthy.
           - name: cert-manager
             rules:
-              # Let's Encrypt issues for 90 days and cert-manager renews at 30 days remaining.
-              # Below 21 days the renewal has already failed at least once, silently, and the
-              # clock is the only thing still moving. Shortest real cert in this cluster sits at
-              # ~34 days, so this is quiet today.
-              #
-              # Unreachable on demand, unlike everything else here — nothing can make a
-              # certificate expire faster. It earns its place by being the failure that gives
-              # weeks of warning and still takes people by surprise.
               - alert: CertificateExpiringSoon
                 expr: (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 21
                 for: 1h
@@ -309,8 +208,6 @@ spec:
                 annotations:
                   summary: "Certificate `{{ $labels.namespace }}/{{ $labels.name }}` expires in {{ printf \"%.0f\" $value }} days"
                   description: "Issued by `{{ $labels.issuer_name }}`. Renewal should have happened at 30 days remaining and did not. Every browser and every internal client starts failing TLS on the same day."
-              # The reproducible one: break the issuer, the DNS-01/HTTP-01 challenge, or the
-              # ACME account and a Certificate leaves Ready within minutes.
               - alert: CertificateNotReady
                 expr: certmanager_certificate_ready_status{condition="True"} == 0
                 for: 15m
@@ -319,9 +216,6 @@ spec:
                 annotations:
                   summary: "Certificate `{{ $labels.namespace }}/{{ $labels.name }}` is not Ready"
                   description: "cert-manager cannot issue or renew this certificate through `{{ $labels.issuer_name }}`. The existing secret keeps serving until it expires, so nothing breaks yet — this is the whole warning."
-              # One broken ClusterIssuer takes every certificate that references it, across every
-              # namespace, on their own renewal schedules. The blast radius is the reason this is
-              # critical while a single Certificate is not.
               - alert: ClusterIssuerNotReady
                 expr: certmanager_clusterissuer_ready_status{condition="True"} == 0
                 for: 15m
@@ -339,18 +233,6 @@ spec:
                   summary: "cert-manager controller `{{ $labels.controller }}` is erroring on sync"
                   description: "The `{{ $labels.controller }}` controller is failing its reconcile loop. ACME rate limits, a DNS provider rejecting the challenge, and a bad issuer secret all land here."
 
-          # Flux v2.9 controllers are scraped through the same annotation-driven job — no
-          # scrape_config needed. But `gotk_reconcile_condition`, the metric every "Flux
-          # reconcile failed" rule on the internet is written against, was REMOVED in Flux v2.4
-          # and does not exist here. What remains (gotk_reconcile_duration_seconds_count) counts
-          # reconciles without distinguishing success from failure, and Flux retries on failure,
-          # so the counter keeps moving through an outage. A failing HelmRelease is therefore
-          # invisible to metrics by construction.
-          #
-          # Actual reconcile FAILURES reach Alertmanager as events instead, through the
-          # notification-controller Provider and Alert in apps/base/systems/flux-alerts/.
-          # The two rules below cover only what events cannot: a controller that has stopped
-          # emitting anything at all, and so cannot report its own failure.
           - name: flux
             rules:
               - alert: FluxControllerDown
@@ -361,9 +243,6 @@ spec:
                 annotations:
                   summary: "Flux controller `{{ $labels.pod }}` is not responding to scrapes"
                   description: "GitOps has stopped for whatever this controller owns. The cluster keeps running the last applied state, so nothing appears wrong until someone merges a change and it never lands."
-              # Measured baseline: Kustomization 0.0125/s, GitRepository 0.033/s, HelmRelease and
-              # HelmChart 0.129/s — every kind reconciles continuously. Zero over 15 minutes means
-              # the controller is up but wedged, or someone suspended the resources and forgot.
               - alert: FluxReconciliationStalled
                 expr: sum by (kind) (rate(gotk_reconcile_duration_seconds_count[15m])) == 0
                 for: 10m
@@ -373,16 +252,6 @@ spec:
                   summary: "Flux has stopped reconciling `{{ $labels.kind }}` objects"
                   description: "No `{{ $labels.kind }}` reconcile has been recorded for 15 minutes while the controller is still answering scrapes. Either it is wedged, or these resources are suspended — `flux get {{ $labels.kind }} --all-namespaces` says which."
 
-          # Postgres is the agent's incident memory and Redis its conversation cache, so both
-          # are failure modes of the agent, not just of the cluster.
-          #
-          # Metric names below were confirmed by running the two exporter images against a real
-          # postgres and a real redis locally, not read from documentation — twice already in
-          # this file a metric that "obviously" exists turned out not to.
-          #
-          # Neither exporter is deployed yet at the time these were written, so unlike every
-          # other rule here they have NOT been evaluated against the live Prometheus. Do that
-          # once the sidecars roll out.
           - name: postgres
             rules:
               - alert: PostgresDown
@@ -393,9 +262,6 @@ spec:
                 annotations:
                   summary: "Postgres exporter cannot reach the database"
                   description: "`pg_up` is 0. The agent loses its incident memory and the sample apps stop writing orders. If this appears immediately after enabling metrics and the database is plainly healthy, the exporter cannot authenticate — check the sidecar log, not the database."
-              # Reachable by scaling sample-apps replicas up until the pool is exhausted.
-              # Aggregated on namespace+pod rather than the exporter's own `server` label:
-              # both come from the same scrape target, and not every collector emits `server`.
               - alert: PostgresConnectionsNearLimit
                 expr: |
                   sum by (namespace, pod) (pg_stat_activity_count{namespace="postgresql"})
@@ -416,9 +282,6 @@ spec:
                 annotations:
                   summary: "Postgres is resolving deadlocks in `{{ $labels.datname }}`"
                   description: "Postgres broke a deadlock by killing one transaction. The application sees a failed query, retries, and usually succeeds — so this is invisible from the app side and shows up as unexplained latency."
-              # The classic quiet killer: a transaction left open holds its locks and pins the
-              # vacuum horizon while doing nothing at all. 120s rather than a production 5-10m
-              # so it is reachable inside a benchmark run.
               - alert: PostgresIdleInTransaction
                 expr: max by (namespace, pod, datname) (pg_stat_activity_max_tx_duration{namespace="postgresql",state="idle in transaction"}) > 120
                 for: 2m
@@ -438,12 +301,8 @@ spec:
                 annotations:
                   summary: "Redis exporter cannot reach Redis"
                   description: "The agent's conversation cache is gone. Investigations still run, but every one of them starts from nothing."
-              # No `used / maxmemory` ratio rule here on purpose: `redis_memory_max_bytes` reads
-              # 0 when maxmemory is unset, which is the default and is what this deployment
-              # runs — the ratio would divide by zero and the rule would sit silently inert
-              # forever. Eviction is the damage, so measure the damage directly; unbounded
-              # growth with no maxmemory ends as an OOMKill, which KubernetesContainerOomKiller
-              # already catches.
+
+
               - alert: RedisEvictingKeys
                 expr: sum by (namespace, pod) (rate(redis_evicted_keys_total{namespace="redis"}[5m])) > 0
                 for: 2m
@@ -461,35 +320,9 @@ spec:
                   summary: "Redis is refusing new connections"
                   description: "`maxclients` is reached. Clients already connected keep working, so this looks like a partial outage affecting only whatever restarted most recently."
 
-          # The outage this cluster had on 2026-09-24 and could not see: both fluentbit pods
-          # stayed Running and 1/1 Ready for 36 hours while their pipelines were wedged, and
-          # Loki's newest line aged the whole time. The readiness probe is `Health_Check On`,
-          # which measures the output's ERROR and RETRY rates over a window — a pipeline that
-          # has stopped producing chunks has neither, so a dead shipper reports perfect health.
-          # It was found by hand, and only because an agent investigation kept coming back with
-          # no logs and the third guess was to ask Loki what it held for ANY namespace.
-          #
-          # This CANNOT be a Loki Ruler rule. A log-based alert on "no logs are arriving"
-          # evaluates against the data that stopped arriving, so it is blind to its own subject
-          # and would have sat in exactly the same silence. It has to be a Prometheus rule
-          # against the shipper's own counters — hence the podAnnotations on the fluentbit
-          # HelmRelease, which put it on the annotation-driven `kubernetes-pods` job (same
-          # mechanism as cert-manager; no scrape_config needed, and the dev overlay's explicit
-          # `serverFiles.prometheus.yml.scrape_configs` list does not touch that job).
           - name: logging-pipeline
             rules:
-              # `or absent(...)` is load-bearing, not defensive padding. When the shipper is
-              # unscrapable — pod gone, node gone, metrics endpoint dead — the rate query
-              # returns an EMPTY vector, and `== 0` over empty is not a firing alert, it is no
-              # alert at all. Without the second half this rule covers "wedged" and misses
-              # "gone", which is the louder half of the same failure.
-              #
-              # Per-pod, not one cluster-wide sum: one node's shipper wedging is the more
-              # insidious shape, because half the cluster's logs vanish while the other half
-              # keeps arriving, so every query still returns something and looks answered.
-              #
-              # 15m of zero is never idle here — flux, longhorn and kube-system chatter
-              # continuously, and the quietest measured window still ships thousands of lines.
+
               - alert: LogShipperStalled
                 expr: |
                   sum by (pod) (rate(fluentbit_output_proc_records_total[15m])) == 0
@@ -498,10 +331,6 @@ spec:
                 labels:
                   severity: critical
                 annotations:
-                  # Conditional because the two halves of the expr carry different labels: the
-                  # rate half is per-pod, the absent() half is a bare 1 with no labels at all,
-                  # so an unguarded {{ $labels.pod }} renders an empty backtick pair on exactly
-                  # the branch that means "the shipper is gone".
                   summary: "No logs have reached Loki{{ if $labels.pod }} from `{{ $labels.pod }}`{{ end }} for 15m"
                   description: "fluentbit has shipped zero records to Loki for 15 minutes. Its pod is almost certainly still Running and Ready — the health check cannot see this failure. Until it is fixed every Loki query returns an empty result, which reads as `no errors in the logs` rather than `no logs at all`. Remediation is `kubectl -n monitoring rollout restart ds/fluentbit`. :pepe_susq:"
     alertmanager:
