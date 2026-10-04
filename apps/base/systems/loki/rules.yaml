@@ -27,15 +27,25 @@ data:
       - name: sample-apps-logs
         interval: 1m
         rules:
-          - alert: AppErrorLogSpike
+          - alert: UnexpectedErrorLog
             expr: |
               sum by (namespace, service, pod) (
-                rate({namespace="sample-apps"} | json | level = "error" | msg != "unhandled route error" | msg != "failed to claim a batch" | msg != "migration failed" | msg != "schema is behind the code" | msg !~ ".*refusing to start.*" [5m])
-              ) > 0.01
-            for: 2m
+                count_over_time(
+                  {namespace="sample-apps"}
+                  | json
+                  | level = "error"
+                  | msg != "unhandled route error"
+                  | msg != "failed to claim a batch"
+                  | msg != "migration failed"
+                  | msg != "schema is behind the code"
+                  | msg !~ ".*refusing to start.*"
+                  [1m]
+                )
+              ) > 0
+            for: 1m
             labels:
               severity: warning
               source: loki
             annotations:
-              summary: "Error log spike in `{{ $labels.service }}` at `Dev cluster`"
+              summary: "Unexpected error log in `{{ $labels.service }}` at `Dev cluster`"
               description: "Pod `{{ $labels.pod }}` is logging errors that never became an HTTP status and that no more specific rule claimed. Read the log, there is no metric for this one. :pedro:"

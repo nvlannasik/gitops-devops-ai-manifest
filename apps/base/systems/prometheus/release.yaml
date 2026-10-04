@@ -154,28 +154,6 @@ spec:
 
           - name: sample-apps
             rules:
-              # A ratio, not a raw rate. The previous form compared 5xx per second against 0.05
-              # and called it "5%": at 100 rps a 0.05% error rate fired it, at 0.5 rps a total
-              # outage did not. The `and` clause is a floor on total traffic so a single 500
-              # against an idle service does not page — 0.01 r/s is one request per 100 seconds,
-              # low enough that the load generator is not required.
-              - alert: SampleAppHighErrorRate
-                expr: |
-                  (
-                    sum by (namespace, service) (rate(http_server_requests_total{namespace="sample-apps",status=~"5.."}[5m]))
-                      / on (namespace, service)
-                    sum by (namespace, service) (rate(http_server_requests_total{namespace="sample-apps"}[5m]))
-                  ) > 0.05
-                  and on (namespace, service)
-                  sum by (namespace, service) (rate(http_server_requests_total{namespace="sample-apps"}[5m])) > 0.01
-                for: 1m
-                labels:
-                  severity: critical
-                annotations:
-                  summary: "`{{ $labels.service }}` is failing {{ $value | humanizePercentage }} of requests"
-                  description: "`{{ $labels.service }}` in `{{ $labels.namespace }}` has returned 5xx for {{ $value | humanizePercentage }} of requests over the last 5 minutes. The counter says how often; the route and the exception are only in the log."
-              # 0.5s is a real histogram bucket edge, so the quantile can actually land on it.
-              # Anything between buckets is interpolated and moves under its own noise.
               - alert: SampleAppHighLatency
                 expr: |
                   histogram_quantile(
