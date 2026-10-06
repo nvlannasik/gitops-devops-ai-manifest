@@ -16,11 +16,9 @@ spec:
 
       slack:
         alertChannel: "C09R0F6F891"
-        oncallUsers: ["U03RCHDHUH5"]
+        oncallUsers: ["U0BGYRD1EPM"]
         approverUsers: ["U0BGYRD1EPM"]
-        # Who may mention the agent or ✅-learn; on-call and approvers are always admitted.
-        # Empty = anyone in the channel.
-        allowedUsers: []
+        allowedUsers: ["U0BGYRD1EPM"]
 
       llm:
         routes:
