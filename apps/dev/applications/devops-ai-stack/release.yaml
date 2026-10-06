@@ -18,6 +18,9 @@ spec:
         alertChannel: "C09R0F6F891"
         oncallUsers: ["U03RCHDHUH5"]
         approverUsers: ["U0BGYRD1EPM"]
+        # Who may mention the agent or ✅-learn; on-call and approvers are always admitted.
+        # Empty = anyone in the channel.
+        allowedUsers: []
 
       llm:
         routes:
