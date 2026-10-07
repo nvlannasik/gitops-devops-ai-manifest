@@ -22,7 +22,7 @@ spec:
 
       llm:
         routes:
-          heavy: [private-llm-chatgpt, chatgpt, haiku]
+          heavy: [private-llm-chatgpt, chatgpt]
           light: [private-llm-agus, deepseek]
 
       env:

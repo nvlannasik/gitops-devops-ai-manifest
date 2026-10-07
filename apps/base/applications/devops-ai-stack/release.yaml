@@ -104,12 +104,6 @@ spec:
       llm:
         provider: "router"
         backends:
-          - name: haiku
-            kind: claude
-            baseUrl: "https://api.anthropic.com/v1"
-            model: claude-haiku-4-5
-            existingSecret: devops-agent-secret
-            apiKeyKey: CLAUDE_KEY
           - name: chatgpt
             kind: openai-compatible
             baseUrl: "https://api.openai.com/v1"
