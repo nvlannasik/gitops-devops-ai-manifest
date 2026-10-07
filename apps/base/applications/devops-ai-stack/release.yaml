@@ -110,12 +110,23 @@ spec:
             model: gpt-5-nano-2025-08-07
             existingSecret: devops-agent-secret
             apiKeyKey: OPENAI_KEY
+            # USD per 1M tokens — OpenAI's published gpt-5-nano rates (developers.openai.com,
+            # checked 2026-10-08). The dashboard's cost per investigation reads these.
+            priceInput: 0.05
+            priceOutput: 0.4
+            priceCacheRead: 0.005
           - name: deepseek
             kind: openai-compatible
             baseUrl: "https://api.deepseek.com"
             model: deepseek-v4-flash
             existingSecret: devops-agent-secret
             apiKeyKey: DEEPSEEK_KEY
+            # USD per 1M tokens — DeepSeek's PEAK rates for deepseek-v4-flash (api-docs.deepseek.com,
+            # checked 2026-10-08). Off-peak is half; one number cannot follow the clock, so this is
+            # the upper bound and the dashboard never shows less than was spent.
+            priceInput: 0.3
+            priceOutput: 1.2
+            priceCacheRead: 0.006
           - name: private-llm-agus
             kind: private-llm
             requestQueue: "private-llm-request.fifo"
@@ -126,6 +137,10 @@ spec:
           - name: private-llm-chatgpt
             kind: private-llm
             requestQueue: "private-llm-chatgpt-request.fifo"
+            # Same model as chatgpt (gpt-5-nano via llm-worker), so the same published rates.
+            priceInput: 0.05
+            priceOutput: 0.4
+            priceCacheRead: 0.005
             contextTokens: 128000
             # Must equal devops-llm-worker.llm.maxTokens below. The agent sends no ceiling over
             # SQS — the worker holds its own — so this value only reserves reply window. Left at
