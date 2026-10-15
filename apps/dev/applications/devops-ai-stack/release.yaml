@@ -33,6 +33,9 @@ spec:
         SUBAGENT_MAX_ITERATIONS: 3
         SUBAGENT_TOOL_ROUNDS: 2
 
+      dashboard:
+        publicUrl: "https://agent.annasik.cloud"
+
       ingress:
         annotations: 
           cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
