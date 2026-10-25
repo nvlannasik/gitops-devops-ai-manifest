@@ -1,0 +1,58 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: checkout-gateway
+  namespace: flux-app
+spec:
+  chart:
+    spec:
+      version: 1.0.1
+  values:
+    image:
+      tag: latest
+    extraEnvVars:
+      - name: SERVICE_VERSION
+        value: latest
+      - name: DEPLOYMENT_ENV
+        value: stg
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://jaeger.monitoring.svc.cluster.local:4318
+      - name: ORDERS_API_URL
+        value: http://orders-api.sample-apps.svc.cluster.local:3000
+      - name: WORKER_URL
+        value: http://settlement-worker.sample-apps.svc.cluster.local:3001
+      - name: GATEWAY_AUTH_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: checkout-gateway-secret
+            key: GATEWAY_AUTH_TOKEN
+    secret:
+      enabled: false
+    replicaCount: 1
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    loggingOperator:
+      enabled: false
+    secretStore:
+      enabled: false
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      hostname: api.annasik.cloud
+      apiVersion: "networking.k8s.io/v1"
+      pathType: Prefix
+      path: /
+      tls: true
+      selfSigned: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 56Mi
+      limits:
+        cpu: 100m
+        memory: 96Mi
