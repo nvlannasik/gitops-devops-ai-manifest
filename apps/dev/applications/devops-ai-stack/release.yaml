@@ -5,6 +5,14 @@ metadata:
   namespace: flux-app
 spec:
   values:
+    # OpenTelemetry from the agent, the MCP server and the llm-worker into the dev Jaeger (chart
+    # 0.8.0; spec devops-ai-agent/docs/superpowers/specs/2026-10-27-otel-tracing-design.md). The
+    # Jaeger UI is behind the oauth2-proxy login (apps/base/systems/jaeger/release.yaml).
+    global:
+      tracing:
+        enabled: true
+        endpoint: "http://jaeger.monitoring.svc.cluster.local:4318"
+
     devops-ai-agent:
       image:
         tag: latest
@@ -35,6 +43,7 @@ spec:
 
       dashboard:
         publicUrl: "https://agent.annasik.cloud"
+        tracingUiUrl: "https://jaeger.annasik.cloud"
 
       ingress:
         annotations: 
