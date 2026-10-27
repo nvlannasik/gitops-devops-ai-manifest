@@ -114,6 +114,12 @@ spec:
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-cluster-issuer
           nginx.ingress.kubernetes.io/ssl-redirect: "false"
+          # Behind the same oauth2-proxy login as Headlamp (cookie/whitelist domain .annasik.cloud).
+          # Traces carry alert names, namespaces, workload names and Slack thread ids; the agent and
+          # the MCP server read Jaeger through the in-cluster Service, never this Ingress.
+          nginx.ingress.kubernetes.io/auth-url: "https://headlamp.annasik.cloud/oauth2/auth"
+          nginx.ingress.kubernetes.io/auth-signin: "https://headlamp.annasik.cloud/oauth2/start?rd=$scheme://$best_http_host$request_uri"
+          nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User, X-Auth-Request-Email"
         hosts:
           - jaeger.annasik.cloud
         tls:
