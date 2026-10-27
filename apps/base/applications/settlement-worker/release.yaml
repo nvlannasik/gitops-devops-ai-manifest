@@ -32,7 +32,7 @@ spec:
     commonLabels:
       app: settlement-worker
     image:
-      repository: nvlannasik/settlement
+      repository: nvlannasik/settlement-worker
       registry: docker.io
     containerPorts:
       - name: main
