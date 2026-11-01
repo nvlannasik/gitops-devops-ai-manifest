@@ -14,3 +14,13 @@ spec:
       # The sample apps' database. Bitnami creates it only on the first init of an empty volume,
       # and only when it is named here — dev's was made by hand.
       database: sample_app
+    primary:
+      # After a crash, postgres fsyncs every file in its data directory before it accepts
+      # connections. On stg's Longhorn volume (~15ms per fsync) that outlasted the liveness
+      # probe (30s + 6x10s): it was killed mid-recovery, crashed, and started over, forever
+      # (2026-11-02). Liveness only counts once this has passed: up to 10 minutes to start.
+      startupProbe:
+        enabled: true
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        failureThreshold: 60
