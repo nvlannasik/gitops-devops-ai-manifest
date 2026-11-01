@@ -4,4 +4,10 @@ metadata:
   name: longhorn
   namespace: flux-system
 spec:
-  values: {}
+  values:
+    # stg has one schedulable node (master1 carries NoSchedule). With replicaSoftAntiAffinity off,
+    # a second replica can never be placed, so every volume would start degraded.
+    persistence:
+      defaultClassReplicaCount: 1
+    defaultSettings:
+      defaultReplicaCount: 1

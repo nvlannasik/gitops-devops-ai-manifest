@@ -14,6 +14,10 @@ spec:
         name: longhorn
       version: "1.12.0"
   interval: 5m0s
+  # Longhorn pulls about a dozen images. On a fresh node that took longer than Helm's default 5m:
+  # stg's first install timed out, the uninstall remediation failed too, and the release was left
+  # 'uninstalling' (2026-11-02).
+  timeout: 15m
   install:
     remediation:
       retries: 3
