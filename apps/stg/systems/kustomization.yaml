@@ -5,7 +5,6 @@ resources:
   - ../../../apps/base/systems/flux-alerts
   - reloader
   - prometheus
-  - postgres
   - loki
   - jaeger
   - fluentbit
