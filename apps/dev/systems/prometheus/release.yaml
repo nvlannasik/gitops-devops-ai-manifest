@@ -9,6 +9,23 @@ spec:
       replicaCount: 1
       image:
         tag: "v3.13.0"
+      # The central Prometheus: workload clusters (stg) remote_write into it. The receiver is
+      # reached on the LAN LoadBalancer in systems/central-ingest, and blocked on the public
+      # Ingress below — a public write endpoint would let anyone inject series, and with them
+      # alerts the agent would investigate. web.enable-lifecycle is the chart default, restated
+      # because extraFlags replaces the list.
+      extraFlags:
+        - web.enable-lifecycle
+        - web.enable-remote-write-receiver
+      ingress:
+        extraPaths:
+          - path: /api/v1/write
+            pathType: Exact
+            backend:
+              service:
+                name: prometheus-write-blocked
+                port:
+                  number: 80
     serviceAccounts:
       server:
         create: true

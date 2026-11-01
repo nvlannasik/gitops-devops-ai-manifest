@@ -7,3 +7,15 @@ spec:
   values:
     image:
       tag: "5.0.9"
+    config:
+      # stg's logs go to the central Loki (dev) on the LAN LoadBalancer, with `cluster=stg` on every
+      # stream. The rest is base's [OUTPUT] unchanged — this string replaces it whole.
+      outputs: |
+        [OUTPUT]
+            Name        loki
+            Match       kube.*
+            Host        10.10.10.112
+            Port        3100
+            Labels      cluster=stg, job=$k8s_job, namespace=$kubernetes['namespace_name'], app=$k8s_app, container=$kubernetes['container_name'], pod=$kubernetes['pod_name'], stream=$stream
+            Remove_keys kubernetes
+            Auto_kubernetes_labels off

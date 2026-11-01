@@ -9,6 +9,14 @@ spec:
       replicaCount: 1
       image:
         tag: "v3.13.0"
+      # stg is a workload cluster: its series go to the central Prometheus (dev) on the LAN
+      # LoadBalancer, labelled `cluster: stg` there. external_labels apply to what is sent, so the
+      # label is on every series and alert at the centre and nowhere it could be mistaken here.
+      global:
+        external_labels:
+          cluster: stg
+      remoteWrite:
+        - url: http://10.10.10.111/api/v1/write
     serviceAccounts:
       server:
         create: true
@@ -50,9 +58,6 @@ spec:
                   names:
                     - kube-system
             relabel_configs:
-              - target_label: cluster_name
-                replacement: "kubernetes-cluster-dev"
-                action: replace
               - source_labels: [__meta_kubernetes_node_name]
                 target_label: node
               - source_labels: [__meta_kubernetes_node_address_InternalIP]
@@ -92,9 +97,6 @@ spec:
                   names:
                     - kube-system
             relabel_configs:
-              - target_label: cluster_name
-                replacement: "kubernetes-cluster-dev"
-                action: replace
               - source_labels: [__meta_kubernetes_node_name]
                 target_label: node
               - source_labels: [__meta_kubernetes_node_address_InternalIP]
@@ -122,9 +124,6 @@ spec:
                     "kube-state-metrics.kube-system.svc.cluster.local:8080",
                   ]
             relabel_configs:
-              - target_label: cluster_name
-                replacement: "kubernetes-cluster-dev"
-                action: replace
               - source_labels: [__meta_kubernetes_node_name]
                 target_label: node
               - source_labels: [__meta_kubernetes_node_address_InternalIP]

@@ -1,0 +1,49 @@
+# The LAN entry points of the central observability stack: workload clusters (stg) write their
+# metrics and logs here. Internal network only — no Ingress, no public host. The IPs are pinned
+# from MetalLB's picluster-pool (10.10.10.100/32 + .110-.150; .110 is held by k3s' traefik).
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-ingest
+  annotations:
+    metallb.io/loadBalancerIPs: 10.10.10.111
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/instance: monitoring-prometheus
+    app.kubernetes.io/name: prometheus
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-ingest
+  annotations:
+    metallb.io/loadBalancerIPs: 10.10.10.112
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/component: single-binary
+    app.kubernetes.io/instance: monitoring-loki
+    app.kubernetes.io/name: loki
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3100
+---
+# The backend of the public Ingress' /api/v1/write path: it selects no pod, so nginx answers 503.
+# Blocks the remote-write receiver on prometheus.annasik.cloud without nginx snippets.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-write-blocked
+spec:
+  selector:
+    devops-ai/blocked: "true"
+  ports:
+    - name: http
+      port: 80

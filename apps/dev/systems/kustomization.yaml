@@ -5,6 +5,7 @@ resources:
   - ../../../apps/base/systems/flux-alerts
   - reloader
   - prometheus
+  - central-ingest
   # - cert-manager
   - alertmanager
   - postgres
