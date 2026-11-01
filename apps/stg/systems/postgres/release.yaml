@@ -4,6 +4,9 @@ metadata:
   name: postgresql
   namespace: flux-system
 spec:
+  # Longer than the startup probe below allows (10m): Helm waits for readiness, and on a timeout
+  # the install remediation deleted the pod mid-recovery — the same loop one level up.
+  timeout: 15m
   values:
     image:
       tag: latest
