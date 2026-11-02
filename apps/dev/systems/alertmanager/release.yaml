@@ -30,7 +30,9 @@ spec:
                   credentials_file: /etc/alertmanager/secrets/webhook-token
 
       route:
-        group_by: ["alertname", "namespace"]
+        # One group = one investigation, and dev and stg share namespace names (kube-system, monitoring):
+        # grouping by cluster keeps a dev and a stg crash-loop from merging into one thread.
+        group_by: ["alertname", "namespace", "cluster"]
         group_wait: 30s
         group_interval: 5m
         repeat_interval: 1h

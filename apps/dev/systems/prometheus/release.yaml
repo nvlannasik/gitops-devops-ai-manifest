@@ -48,6 +48,156 @@ spec:
       # k8s_recommend_resources reported CPU at 2x.
       kubernetes-nodes-cadvisor:
         enabled: false
+      # The chart's own jobs, kept on, with one rule added: every dev series is labelled cluster=dev,
+      # the label multi-cluster routes on (stg's arrive with cluster=stg from its external_labels).
+      # Helm REPLACES a list, so each relabel_configs is chart 29.14.0's default copied whole plus
+      # that rule — re-copy on a chart bump.
+      kubernetes-pods:
+        relabel_configs:
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+          action: keep
+          regex: true
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
+          action: drop
+          regex: true
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+          action: replace
+          regex: (https?)
+          target_label: __scheme__
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_path
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_port
+          - __meta_kubernetes_pod_ip
+          action: replace
+          regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+          replacement: '[$2]:$1'
+          target_label: __address__
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_port
+          - __meta_kubernetes_pod_ip
+          action: replace
+          regex: (\d+);((([0-9]+?)(\.|$)){4})
+          replacement: $2:$1
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+          replacement: __param_$1
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels:
+          - __meta_kubernetes_namespace
+          action: replace
+          target_label: namespace
+        - source_labels:
+          - __meta_kubernetes_pod_name
+          action: replace
+          target_label: pod
+        - source_labels:
+          - __meta_kubernetes_pod_phase
+          regex: Pending|Succeeded|Failed|Completed
+          action: drop
+        - source_labels:
+          - __meta_kubernetes_pod_node_name
+          action: replace
+          target_label: node
+        - target_label: cluster
+          replacement: dev
+          action: replace
+      kubernetes-pods-slow:
+        relabel_configs:
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
+          action: keep
+          regex: true
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+          action: replace
+          regex: (https?)
+          target_label: __scheme__
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_path
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_port
+          - __meta_kubernetes_pod_ip
+          action: replace
+          regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+          replacement: '[$2]:$1'
+          target_label: __address__
+        - source_labels:
+          - __meta_kubernetes_pod_annotation_prometheus_io_port
+          - __meta_kubernetes_pod_ip
+          action: replace
+          regex: (\d+);((([0-9]+?)(\.|$)){4})
+          replacement: $2:$1
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+          replacement: __param_$1
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels:
+          - __meta_kubernetes_namespace
+          action: replace
+          target_label: namespace
+        - source_labels:
+          - __meta_kubernetes_pod_name
+          action: replace
+          target_label: pod
+        - source_labels:
+          - __meta_kubernetes_pod_phase
+          regex: Pending|Succeeded|Failed|Completed
+          action: drop
+        - source_labels:
+          - __meta_kubernetes_pod_node_name
+          action: replace
+          target_label: node
+        - target_label: cluster
+          replacement: dev
+          action: replace
+      kubernetes-services:
+        relabel_configs:
+        - source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_probe
+          action: keep
+          regex: true
+        - source_labels:
+          - __address__
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox
+        - source_labels:
+          - __param_target
+          target_label: instance
+        - action: labelmap
+          regex: __meta_kubernetes_service_label_(.+)
+        - source_labels:
+          - __meta_kubernetes_namespace
+          target_label: namespace
+        - source_labels:
+          - __meta_kubernetes_service_name
+          target_label: service
+        - target_label: cluster
+          replacement: dev
+          action: replace
+      prometheus-pushgateway:
+        relabel_configs:
+        - source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_probe
+          action: keep
+          regex: pushgateway
+        - target_label: cluster
+          replacement: dev
+          action: replace
 
     serverFiles:
       prometheus.yml:
@@ -69,6 +219,9 @@ spec:
             relabel_configs:
               - target_label: cluster_name
                 replacement: "kubernetes-cluster-dev"
+                action: replace
+              - target_label: cluster
+                replacement: dev
                 action: replace
               - source_labels: [__meta_kubernetes_node_name]
                 target_label: node
@@ -93,6 +246,10 @@ spec:
             metrics_path: /metrics
             static_configs:
               - targets: ["kube-dns.kube-system.svc.cluster.local:9153"]
+            relabel_configs:
+              - target_label: cluster
+                replacement: dev
+                action: replace
 
           - job_name: "kubernetes-cadvisor"
             scheme: https
@@ -111,6 +268,9 @@ spec:
             relabel_configs:
               - target_label: cluster_name
                 replacement: "kubernetes-cluster-dev"
+                action: replace
+              - target_label: cluster
+                replacement: dev
                 action: replace
               - source_labels: [__meta_kubernetes_node_name]
                 target_label: node
@@ -142,6 +302,9 @@ spec:
               - target_label: cluster_name
                 replacement: "kubernetes-cluster-dev"
                 action: replace
+              - target_label: cluster
+                replacement: dev
+                action: replace
               - source_labels: [__meta_kubernetes_node_name]
                 target_label: node
               - source_labels: [__meta_kubernetes_node_address_InternalIP]
@@ -162,6 +325,9 @@ spec:
               - source_labels: [__meta_kubernetes_endpoints_name]
                 regex: "monitoring-prometheus-prometheus-node-exporter"
                 action: keep
+              - target_label: cluster
+                replacement: dev
+                action: replace
       resources:
         requests:
           cpu: 100m
