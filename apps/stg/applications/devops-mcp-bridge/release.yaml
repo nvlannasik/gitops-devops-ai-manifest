@@ -24,6 +24,18 @@ spec:
       version: "0.8.0"
   interval: 5m
   timeout: 15m
+  # The subchart's livenessProbe default carries httpGet /health, and a parent's `httpGet: null` cannot
+  # remove a subchart default in Helm — so the probe would have two handlers. This patch drops httpGet
+  # after rendering. Chart fix (sqs transport → heartbeat probe, and the AWS env) is the follow-up.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: devops-mcp-server
+            patch: |
+              - op: remove
+                path: /spec/template/spec/containers/0/livenessProbe/httpGet
   install:
     createNamespace: true
     remediation:
@@ -68,6 +80,18 @@ spec:
       aws:
         enabled: true
       writeTools:
+        enabled: false
+      # TRANSPORT=sqs has no HTTP server, so the chart's /health probes killed it every minute. Health is
+      # the bridge's heartbeat file (devops-mcp-server CLAUDE.md), the same probe the lab2 bridge runs with.
+      livenessProbe:
+        enabled: true
+        httpGet: null
+        exec:
+          command: ["sh", "-c", "find /tmp/bridge-heartbeat -mmin -2 | grep -q ."]
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        failureThreshold: 3
+      readinessProbe:
         enabled: false
       rbac:
         create: true
