@@ -9,3 +9,4 @@ resources:
   - jaeger
   - fluentbit
   - longhorn
+  - kube-state-metrics

@@ -1,0 +1,26 @@
+# kube-state-metrics for stg, scraped as job="kube-state-metrics" by stg's Prometheus and shipped to the
+# centre. Without it no pod alert (crash loop, not healthy, image pull) can fire for stg. Same chart and
+# Service name as dev's, which was installed by hand before GitOps and is not managed here.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  releaseName: kube-state-metrics
+  targetNamespace: kube-system
+  chart:
+    spec:
+      chart: kube-state-metrics
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus
+        namespace: flux-system
+      version: "7.5.1"
+  interval: 5m
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: kube-state-metrics

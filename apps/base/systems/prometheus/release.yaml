@@ -83,12 +83,12 @@ spec:
           - name: kubernetes-platform
             rules:
               - alert: KubernetesPodNotHealthy
-                expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
+                expr: sum by (cluster, namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0
                 for: 2m
                 labels:
                   severity: critical
                 annotations:
-                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `Dev cluster`"
+                  summary: "Unhealthy Pod `{{ $labels.pod }}` at `{{ $labels.cluster }}`"
                   description: "Not feeling so well! Pod `{{ $labels.pod }}` in `{{ $labels.namespace }}` has health issues. Time for a check-up! :pepe_susq:"
               - alert: KubernetesPodCrashLooping
                 expr: increase(kube_pod_container_status_restarts_total[5m]) > 2
@@ -96,13 +96,13 @@ spec:
                 labels:
                   severity: critical
                 annotations:
-                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `Dev cluster`"
+                  summary: "Crash Loop Detected `{{ $labels.pod }}` in `{{ $labels.cluster }}`"
                   description: 'Container `{{ $labels.container }}` in pod `{{ $labels.namespace }}/{{ $labels.pod }}` restarted {{ printf "%.0f" $value }} times in the last 5 minutes. It''s time to break the cycle! :pedro:'
               # The most common cluster incident there is: a tag that does not exist, a private
               # registry with no pull secret. Nothing crash-loops, the container never starts,
               # so no restart counter moves and KubernetesPodCrashLooping stays silent.
               - alert: KubernetesPodImagePullFailing
-                expr: sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull|InvalidImageName"}) > 0
+                expr: sum by (cluster, namespace, pod, container) (kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull|InvalidImageName"}) > 0
                 for: 1m
                 labels:
                   severity: critical
@@ -168,7 +168,7 @@ spec:
                   description: "The 99th percentile request duration for `{{ $labels.service }}` in `{{ $labels.namespace }}` is above 500ms. Error rate can be zero throughout — queueing is not failure."
 
               - alert: SampleAppSettlementQueueNotDraining
-                expr: max by (namespace, queue) (queue_oldest_job_age_seconds{namespace="sample-apps"}) > 60
+                expr: max by (cluster, namespace, queue) (queue_oldest_job_age_seconds{namespace="sample-apps"}) > 60
                 for: 1m
                 labels:
                   severity: warning
@@ -220,7 +220,7 @@ spec:
                   summary: "ClusterIssuer `{{ $labels.name }}` is not Ready"
                   description: "No certificate anywhere in the cluster can be issued or renewed through `{{ $labels.name }}` while this holds. Nothing breaks at the moment it happens; things break one by one as each certificate reaches its own renewal date."
               - alert: CertManagerSyncErrors
-                expr: sum by (controller) (rate(certmanager_controller_sync_error_count[15m])) > 0
+                expr: sum by (cluster, controller) (rate(certmanager_controller_sync_error_count[15m])) > 0
                 for: 15m
                 labels:
                   severity: warning
@@ -239,7 +239,7 @@ spec:
                   summary: "Flux controller `{{ $labels.pod }}` is not responding to scrapes"
                   description: "GitOps has stopped for whatever this controller owns. The cluster keeps running the last applied state, so nothing appears wrong until someone merges a change and it never lands."
               - alert: FluxReconciliationStalled
-                expr: sum by (kind) (rate(gotk_reconcile_duration_seconds_count[15m])) == 0
+                expr: sum by (cluster, kind) (rate(gotk_reconcile_duration_seconds_count[15m])) == 0
                 for: 10m
                 labels:
                   severity: warning
@@ -270,7 +270,7 @@ spec:
                   summary: "Postgres is at {{ $value | humanizePercentage }} of max_connections"
                   description: "New connections start being refused at 100%, and the first thing to fail is whatever reconnects next — usually not the workload that exhausted the pool."
               - alert: PostgresDeadlocks
-                expr: sum by (namespace, pod, datname) (rate(pg_stat_database_deadlocks{namespace="postgresql"}[5m])) > 0
+                expr: sum by (cluster, namespace, pod, datname) (rate(pg_stat_database_deadlocks{namespace="postgresql"}[5m])) > 0
                 for: 2m
                 labels:
                   severity: warning
@@ -278,7 +278,7 @@ spec:
                   summary: "Postgres is resolving deadlocks in `{{ $labels.datname }}`"
                   description: "Postgres broke a deadlock by killing one transaction. The application sees a failed query, retries, and usually succeeds — so this is invisible from the app side and shows up as unexplained latency."
               - alert: PostgresIdleInTransaction
-                expr: max by (namespace, pod, datname) (pg_stat_activity_max_tx_duration{namespace="postgresql",state="idle in transaction"}) > 120
+                expr: max by (cluster, namespace, pod, datname) (pg_stat_activity_max_tx_duration{namespace="postgresql",state="idle in transaction"}) > 120
                 for: 2m
                 labels:
                   severity: warning
@@ -299,7 +299,7 @@ spec:
 
 
               - alert: RedisEvictingKeys
-                expr: sum by (namespace, pod) (rate(redis_evicted_keys_total{namespace="redis"}[5m])) > 0
+                expr: sum by (cluster, namespace, pod) (rate(redis_evicted_keys_total{namespace="redis"}[5m])) > 0
                 for: 2m
                 labels:
                   severity: warning
@@ -307,7 +307,7 @@ spec:
                   summary: "Redis is evicting keys"
                   description: "Redis is at its memory ceiling and dropping keys to stay under it. The agent loses conversation context mid-investigation and cannot tell an evicted thread from a new one — it just starts answering without history."
               - alert: RedisRejectingConnections
-                expr: sum by (namespace, pod) (rate(redis_rejected_connections_total{namespace="redis"}[5m])) > 0
+                expr: sum by (cluster, namespace, pod) (rate(redis_rejected_connections_total{namespace="redis"}[5m])) > 0
                 for: 2m
                 labels:
                   severity: warning
