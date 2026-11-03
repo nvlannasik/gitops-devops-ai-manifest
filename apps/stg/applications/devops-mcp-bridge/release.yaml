@@ -68,7 +68,12 @@ spec:
       aws:
         enabled: true
       writeTools:
-        enabled: false
+        enabled: true
+        allowedNamespaces:
+          - default
+          - flux-system
+          - monitoring
+          - devops-tools
       # TRANSPORT=sqs has no HTTP server, so the chart's /health probes killed it every minute. Health is
       # the bridge's heartbeat file (devops-mcp-server CLAUDE.md), the same probe the lab2 bridge runs with.
       livenessProbe:
@@ -84,6 +89,15 @@ spec:
       rbac:
         create: true
         readOnly: true
+        allowWrite: true
+        allowFluxReconcile: true
+        # `allowOrphanDelete` is false on stg: the bridge serves write tools for live remediation
+        # (image bumps, scaling, resource tuning, pod deletes, config patches, Flux reconciles),
+        # but ConfigMap and other orphan deletes are deliberately held back. Dev's measured cases
+        # (long-stale test resources) justify it there; stg has no measured orphans yet. The tool's
+        # safety rails still hold: Flux/Helm owners, workload replicas, age gates, and backups on
+        # the remediation row and Slack thread. Once stg accumulates orphans, set allowOrphanDelete: true.
+        allowOrphanDelete: false
       # The mcp-server template mounts the IAM Roles Anywhere certificate (aws.enabled) but, unlike the
       # agent's and the worker's, renders no AWS env — so it is set here, the same names the lab2 bridge
       # runs with. Fold into the chart (devops-ai.awsEnv in mcp-server's deployment) on its next release.
