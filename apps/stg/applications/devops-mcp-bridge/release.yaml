@@ -37,19 +37,6 @@ spec:
         enabled: false
       redis:
         enabled: false
-      aws:
-        region: "ap-southeast-1"
-        authMode: "iam-anywhere"
-        rolesAnywhere:
-          configSecret:
-            name: aws-rolesanywhere-config
-          trustAnchorArnKey: "trust-anchor-arn"
-          profileArnKey: "profile-arn"
-          roleArnKey: "role-arn"
-        certificate:
-          create: false
-          secretName: "workload-tls"
-          mountPath: "/certs"
     devops-ai-agent:
       enabled: false
     devops-llm-worker:
@@ -61,12 +48,13 @@ spec:
         repository: nvlannasik/devops-mcp-server
         tag: latest
         pullPolicy: Always
+      # HTTP, not the SQS bridge: dev reaches stg over the LAN (in production, a peered network),
+      # so the cluster needs no AWS identity — its IAM Roles Anywhere certificate expiring took the
+      # bridge down on 2026-11-04.
       mcp:
-        transport: "sqs"
+        transport: "http"
       kubernetes:
         authMode: "incluster"
-      aws:
-        enabled: true
       writeTools:
         enabled: true
         allowedNamespaces:
@@ -74,18 +62,6 @@ spec:
           - flux-system
           - monitoring
           - devops-tools
-      # TRANSPORT=sqs has no HTTP server, so the chart's /health probes killed it every minute. Health is
-      # the bridge's heartbeat file (devops-mcp-server CLAUDE.md), the same probe the lab2 bridge runs with.
-      livenessProbe:
-        enabled: true
-        httpGet: null
-        exec:
-          command: ["sh", "-c", "find /tmp/bridge-heartbeat -mmin -2 | grep -q ."]
-        initialDelaySeconds: 60
-        periodSeconds: 30
-        failureThreshold: 3
-      readinessProbe:
-        enabled: false
       rbac:
         create: true
         readOnly: true
@@ -98,18 +74,11 @@ spec:
         # safety rails still hold: Flux/Helm owners, workload replicas, age gates, and backups on
         # the remediation row and Slack thread. Once stg accumulates orphans, set allowOrphanDelete: true.
         allowOrphanDelete: false
-      # The mcp-server template mounts the IAM Roles Anywhere certificate (aws.enabled) but, unlike the
-      # agent's and the worker's, renders no AWS env — so it is set here, the same names the lab2 bridge
-      # runs with. Fold into the chart (devops-ai.awsEnv in mcp-server's deployment) on its next release.
       env:
         NODE_ENV: "stg"
-        MCP_SQS_REQUEST_QUEUE: "devops-mcp-stg-request.fifo"
-        MCP_SQS_RESPONSE_QUEUE: "devops-mcp-response.fifo"
-        AWS_REGION: "ap-southeast-1"
-        AWS_AUTH_MODE: "iam-anywhere"
-        CERT_PATH: "/certs/tls.crt"
-        CERT_KEY_PATH: "/certs/tls.key"
-      secretEnv:
-        AWS_TRUST_ANCHOR_ARN: { secret: aws-rolesanywhere-config, key: trust-anchor-arn }
-        AWS_ROLESANYWHERE_PROFILE_ARN: { secret: aws-rolesanywhere-config, key: profile-arn }
-        AWS_ROLE_ARN: { secret: aws-rolesanywhere-config, key: role-arn }
+        # TEST ONLY — NO AUTH. An empty token leaves the server open (it logs a warning), and
+        # declaring the key is what gets this past the chart's token check, which exists to stop
+        # exactly this: anyone on the LAN can call stg's write tools through NodePort 30300.
+        # Before this cluster is more than a lab: authTokenSecret {name: devops-mcp-auth, key:
+        # MCP_AUTH_TOKEN} holding the agent's token, and drop this line.
+        MCP_AUTH_TOKEN: ""

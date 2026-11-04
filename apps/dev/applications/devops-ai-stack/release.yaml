@@ -44,7 +44,7 @@ spec:
         # dev is the cluster this agent's own MCP server reads; stg is reached through its SQS bridge
         # (apps/stg/applications/devops-mcp-bridge). Every thread, card and incident is bound to one.
         MCP_LOCAL_CLUSTER: "dev"
-        MCP_SQS_CLUSTERS: "stg=devops-mcp-stg-request.fifo"
+        MCP_HTTP_CLUSTERS: "stg=http://10.10.10.105:30300/mcp"
 
       dashboard:
         publicUrl: "https://agent.annasik.cloud"

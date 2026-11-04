@@ -1,0 +1,20 @@
+# The agent on dev calls this cluster's MCP server over the LAN (MCP_HTTP_CLUSTERS on dev:
+# stg=http://10.10.10.105:30300/mcp). stg has no LoadBalancer implementation, so a fixed NodePort
+# on every node; with VPC peering this becomes an internal LoadBalancer. The chart's own Service
+# stays ClusterIP — this one is the deliberate exception, guarded by the bearer token.
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-mcp-server-lan
+  namespace: devops-tools
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: devops-mcp-server
+    app.kubernetes.io/instance: devops-tools-devops-mcp-bridge
+  ports:
+    - name: http
+      port: 3000
+      targetPort: main
+      nodePort: 30300
+      protocol: TCP
