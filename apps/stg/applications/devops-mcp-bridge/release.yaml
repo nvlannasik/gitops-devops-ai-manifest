@@ -21,7 +21,7 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.8.0"
+      version: "0.8.1"
   interval: 5m
   timeout: 15m
   install:
@@ -67,6 +67,9 @@ spec:
         readOnly: true
         allowWrite: true
         allowFluxReconcile: true
+        # cordon / uncordon / drain (chart 0.8.1): patch nodes, create evictions. The tools refuse the
+        # control plane and the last schedulable node; drain evicts, so PDBs still decide.
+        allowNodeOps: true
         # `allowOrphanDelete` is false on stg: the bridge serves write tools for live remediation
         # (image bumps, scaling, resource tuning, pod deletes, config patches, Flux reconciles),
         # but ConfigMap and other orphan deletes are deliberately held back. Dev's measured cases

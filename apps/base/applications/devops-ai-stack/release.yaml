@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.8.0"
+      version: "0.8.1"
   interval: 1m
   install:
     remediation:
@@ -281,6 +281,9 @@ spec:
         readOnly: true
         allowWrite: true
         allowFluxReconcile: true
+        # cordon / uncordon / drain (chart 0.8.1): patch nodes, create evictions. The tools refuse the
+        # control plane and the last schedulable node; drain evicts, so PDBs still decide.
+        allowNodeOps: true
         # `delete` on ConfigMaps, Services, ServiceAccounts, Deployments and StatefulSets, for
         # k8s_delete_orphan. Deliberately NOT folded into allowWrite above: that one grants
         # patch/update plus delete-on-pods, and all of those are recoverable — a patched
