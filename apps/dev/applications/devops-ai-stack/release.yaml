@@ -45,6 +45,12 @@ spec:
         # (apps/stg/applications/devops-mcp-bridge). Every thread, card and incident is bound to one.
         MCP_LOCAL_CLUSTER: "dev"
         MCP_HTTP_CLUSTERS: "stg=http://10.10.10.105:30300/mcp"
+        # VM agent (spec 2026-11-04 Part B): the alert label that names a VM. Tokens below.
+        VM_HOST_LABEL: "hostname"
+      # One bearer token per VM agent, "name=token,…", in a Secret the user creates by hand
+      # (devops-tools/devops-vm-agent-tokens). Optional: without it the VM routes are simply off.
+      secretEnv:
+        VM_AGENT_TOKENS: { secret: devops-vm-agent-tokens, key: VM_AGENT_TOKENS, optional: true }
 
       dashboard:
         publicUrl: "https://agent.annasik.cloud"

@@ -1,0 +1,26 @@
+# The VM agent's endpoints (devops-ai-agent spec 2026-11-04 Part B): VMs pull approved restarts from
+# POST /vm/heartbeat, /vm/actions/claim and /vm/actions/<id>/result on the agent's webhook port (3000),
+# over HTTPS on the agent's own host. Only /vm/ — /alert and /health stay in-cluster. Each VM proves
+# itself with its own bearer token (VM_AGENT_TOKENS); without the Secret the agent mounts no routes and
+# this path answers 404. It reuses the agent Ingress's certificate and does not ask cert-manager for one.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-ai-agent-vm
+  namespace: devops-tools
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["agent.annasik.cloud"]
+      secretName: ai-agent-tls
+  rules:
+    - host: agent.annasik.cloud
+      http:
+        paths:
+          - path: /vm/
+            pathType: Prefix
+            backend:
+              service:
+                name: devops-ai-agent
+                port:
+                  name: http
