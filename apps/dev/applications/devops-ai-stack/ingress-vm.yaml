@@ -8,6 +8,11 @@ kind: Ingress
 metadata:
   name: devops-ai-agent-vm
   namespace: devops-tools
+  annotations:
+    # The public host reaches nginx through the Cloudflare tunnel over plain HTTP (TLS ends at
+    # Cloudflare), so nginx's default HTTP→HTTPS redirect answered every VM with a 308 loop — the
+    # agent's own Ingress carries the same switch for the same reason.
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
   tls:
