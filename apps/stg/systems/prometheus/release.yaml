@@ -8,7 +8,7 @@ spec:
     server:
       replicaCount: 1
       image:
-        tag: "v3.13.0"
+        tag: "v3.15.1"
       # stg is a workload cluster: its series go to the central Prometheus (dev) on the LAN
       # LoadBalancer, labelled `cluster: stg` there. external_labels apply to what is sent, so the
       # label is on every series and alert at the centre and nowhere it could be mistaken here.
