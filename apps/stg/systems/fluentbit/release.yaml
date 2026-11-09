@@ -14,7 +14,7 @@ spec:
         [OUTPUT]
             Name        loki
             Match       kube.*
-            Host        10.10.10.112
+            Host        10.10.10.201
             Port        3100
             Labels      cluster=stg, job=$k8s_job, namespace=$kubernetes['namespace_name'], app=$k8s_app, container=$kubernetes['container_name'], pod=$kubernetes['pod_name'], stream=$stream
             Remove_keys kubernetes

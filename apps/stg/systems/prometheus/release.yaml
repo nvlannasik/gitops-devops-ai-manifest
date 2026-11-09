@@ -16,7 +16,7 @@ spec:
         external_labels:
           cluster: stg
       remoteWrite:
-        - url: http://10.10.10.111/api/v1/write
+        - url: http://10.10.10.202/api/v1/write
     serviceAccounts:
       server:
         create: true

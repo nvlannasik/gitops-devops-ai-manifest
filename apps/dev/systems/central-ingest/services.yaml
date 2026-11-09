@@ -6,7 +6,7 @@ kind: Service
 metadata:
   name: prometheus-ingest
   annotations:
-    metallb.io/loadBalancerIPs: 10.10.10.111
+    metallb.io/loadBalancerIPs: 10.10.10.202
 spec:
   type: LoadBalancer
   selector:
@@ -23,7 +23,7 @@ kind: Service
 metadata:
   name: loki-ingest
   annotations:
-    metallb.io/loadBalancerIPs: 10.10.10.112
+    metallb.io/loadBalancerIPs: 10.10.10.201
 spec:
   type: LoadBalancer
   selector:
