@@ -44,7 +44,7 @@ spec:
         # dev is the cluster this agent's own MCP server reads; stg is reached through its SQS bridge
         # (apps/stg/applications/devops-mcp-bridge). Every thread, card and incident is bound to one.
         MCP_LOCAL_CLUSTER: "dev"
-        MCP_HTTP_CLUSTERS: "stg=http://10.10.10.105:30300/mcp"
+        # MCP_HTTP_CLUSTERS: "stg=http://10.10.10.105:30300/mcp"
         # VM agent (spec 2026-11-04 Part B): the alert label that names a VM. Tokens below.
         VM_HOST_LABEL: "hostname"
       # One bearer token per VM agent, "name=token,…", in a Secret the user creates by hand
