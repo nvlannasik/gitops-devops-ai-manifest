@@ -5,6 +5,7 @@ resources:
   - ../../../apps/base/systems/flux-alerts
   - reloader
   - prometheus
+  - kube-state-metrics
   # - central-ingest
   # - cert-manager
   - alertmanager

@@ -78,7 +78,8 @@ spec:
         # Label selectors assume the chart's built-in `kubernetes-pods` scrape job (annotation
         # driven, so `job="kubernetes-pods"` for everything in sample-apps) and a
         # kube-state-metrics running in kube-system, which the dev overlay scrapes as
-        # `job="kube-state-metrics"`. The chart's own kube-state-metrics subchart is disabled.
+        # `job="kube-state-metrics"`. The chart's own kube-state-metrics subchart is disabled; each
+        # overlay declares its own release (apps/<env>/systems/kube-state-metrics).
         groups:
           - name: kubernetes-platform
             rules:

@@ -1,0 +1,29 @@
+# kube-state-metrics for dev, scraped as job="kube-state-metrics" by dev's Prometheus
+# (apps/dev/systems/prometheus/release.yaml, target kube-state-metrics.kube-system.svc:8080).
+# Every kube_* alert rule reads it: pod crash loops, image pulls, WorkerNodeIsNotReady,
+# KubernetesNodeMemoryPressure, StatefulSetDown. Dev's used to be installed by hand, outside GitOps,
+# and did not survive the 2026-11-07 rebuild: from then until 2026-11-14 the target was down and
+# not one of those alerts could fire. Declared here so the next rebuild brings it back.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  releaseName: kube-state-metrics
+  targetNamespace: kube-system
+  chart:
+    spec:
+      chart: kube-state-metrics
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus
+        namespace: flux-system
+      version: "7.5.1"
+  interval: 5m
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: kube-state-metrics
