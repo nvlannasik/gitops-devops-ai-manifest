@@ -337,3 +337,16 @@ spec:
       enabled: false
     prometheus-node-exporter:
       enabled: true
+      # Sized from 7 days of its own usage (2026-11-16): working set peaks at ~27Mi on every
+      # node, CPU p95 2-5m, max 7m. With no resources it was BestEffort — the kubelet's FIRST
+      # eviction victim — and on 2026-11-15 a memory-pressured master3-vm evicted it, which took
+      # the node's own memory and disk metrics away exactly when they were needed. A request
+      # above its peak puts it behind every BestEffort pod and every pod over its request.
+      # The CPU limit is far above use on purpose: a throttled exporter misses scrapes.
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
