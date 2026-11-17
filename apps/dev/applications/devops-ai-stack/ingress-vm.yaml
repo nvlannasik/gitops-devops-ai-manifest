@@ -3,6 +3,11 @@
 # over HTTPS on the agent's own host. Only /vm/ — /alert and /health stay in-cluster. Each VM proves
 # itself with its own bearer token (VM_AGENT_TOKENS); without the Secret the agent mounts no routes and
 # this path answers 404. It reuses the agent Ingress's certificate and does not ask cert-manager for one.
+#
+# The cluster's own nodes (homelab-k8s inventory/homelab/devops-vm-agent.yml) stay on the LAN: they
+# post to http://10.10.10.200/vm/ (ingress-nginx's MetalLB IP) and hit the host-less rule below, so
+# their heartbeats never leave the network or depend on Cloudflare. Plain HTTP on the LAN: the bearer
+# token travels unencrypted there (https on that IP serves ingress-nginx's fake certificate).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -21,6 +26,15 @@ spec:
   rules:
     - host: agent.annasik.cloud
       http:
+        paths:
+          - path: /vm/
+            pathType: Prefix
+            backend:
+              service:
+                name: devops-ai-agent
+                port:
+                  name: http
+    - http:
         paths:
           - path: /vm/
             pathType: Prefix
