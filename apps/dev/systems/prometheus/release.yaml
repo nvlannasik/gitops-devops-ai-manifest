@@ -245,10 +245,12 @@ spec:
           # this Prometheus (512Mi) has no use for. `up` is recorded whatever metric_relabel keeps.
           # Prometheus keeps targets it discovered while the API cannot be asked, so with every API
           # server down these scrapes keep failing instead of the targets disappearing.
+          # 60s/25s: the payload is large and the first scrapes took 3-8.4 s (master1-raspi slowest) —
+          # a 10 s timeout sat too close to it for a rule that pages on failure.
           - job_name: "kubernetes-apiservers"
             scheme: https
-            scrape_interval: 30s
-            scrape_timeout: 10s
+            scrape_interval: 60s
+            scrape_timeout: 25s
             tls_config:
               insecure_skip_verify: true
             bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
