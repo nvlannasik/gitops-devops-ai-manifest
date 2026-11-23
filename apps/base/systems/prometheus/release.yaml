@@ -138,6 +138,29 @@ spec:
                 annotations:
                   summary: "Kubernetes StatefulSet `{{ $labels.namespace }}/{{ $labels.statefulset }}` is down"
                   description: "StatefulSet `{{ $labels.namespace }}/{{ $labels.statefulset }}` has unready replicas and no rollout in progress."
+              # Two signals that do not go through the Kubernetes API, because the moment they matter
+              # is the moment it is down. 2026-11-21..23: the three VMs (two control planes) were off
+              # for 66 h, etcd lost quorum, kube-state-metrics went blind with the API — so
+              # WorkerNodeIsNotReady could not fire — and the only alert was FluxControllerDown.
+              # Prometheus keeps targets it discovered while the API cannot be asked, so these scrapes
+              # keep failing loudly. The kubelet job is `role: node`: a Node object outlives its
+              # machine, unlike the node-exporter endpoints, which leave with the pod.
+              - alert: KubernetesNodeUnreachable
+                expr: up{job="kubernetes-kubelet-monitoring"} == 0
+                for: 5m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Node `{{ $labels.node }}` is unreachable"
+                  description: "Prometheus has not been able to scrape the kubelet on `{{ $labels.node }}` ({{ $labels.node_ip }}) for 5 minutes — the machine is down, off the network, or its kubelet is dead. Its pods are not running, whatever the API last said."
+              - alert: KubernetesApiServerDown
+                expr: sum by (cluster) (up{job="kubernetes-apiservers"}) == 0
+                for: 3m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "No Kubernetes API server is answering in `{{ $labels.cluster }}`"
+                  description: "Every kube-apiserver endpoint has failed its scrape for 3 minutes. Nothing that needs the API works — scheduling, controllers, Flux, kube-state-metrics, so every kube_* alert is blind. With a stacked etcd, check that a majority of the control-plane machines is up: etcd needs quorum."
 
           - name: container-saturation
             rules:
@@ -247,6 +270,21 @@ spec:
                 annotations:
                   summary: "Flux has stopped reconciling `{{ $labels.kind }}` objects"
                   description: "No `{{ $labels.kind }}` reconcile has been recorded for 15 minutes while the controller is still answering scrapes. Either it is wedged, or these resources are suspended — `flux get {{ $labels.kind }} --all-namespaces` says which."
+              # One object Flux gave up on. FluxReconciliationStalled above cannot see it: a Stalled
+              # HelmRelease is still reconciled on its interval, so the reconcile rate never drops.
+              # Six HelmReleases sat Stalled from 2026-11-09 to 11-23 (four failed installs during the
+              # rebuild) and a merged change to any of them would have landed nowhere. Reads
+              # gotk_resource_info, kube-state-metrics' custom-resource metric (each overlay's
+              # kube-state-metrics release declares it; Flux's controllers no longer export a
+              # readiness metric). Suspended objects are paused on purpose and left out.
+              - alert: FluxResourceNotReady
+                expr: max by (cluster, customresource_kind, exported_namespace, name) (gotk_resource_info{ready="False", suspended!="true"}) == 1
+                for: 15m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "Flux {{ $labels.customresource_kind }} `{{ $labels.exported_namespace }}/{{ $labels.name }}` is not Ready"
+                  description: "Flux has not reached the declared state of this {{ $labels.customresource_kind }} for 15 minutes. After failed installs or upgrades it stops retrying (Stalled), and a Git change to it is not applied until it is Ready again — its Ready and Stalled conditions say why."
 
           - name: postgres
             rules:

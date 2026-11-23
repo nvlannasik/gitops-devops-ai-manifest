@@ -238,6 +238,37 @@ spec:
                 replacement: $1
                 action: keep
 
+          # The API servers, for two things only (2026-11-24): `up` — KubernetesApiServerDown in the
+          # base rules — and the per-instance load the agent's control-plane balance reads (requests
+          # in flight, long-running requests i.e. watches, resident memory). Everything else on
+          # /metrics is dropped at scrape: the full apiserver payload is thousands of histogram series
+          # this Prometheus (512Mi) has no use for. `up` is recorded whatever metric_relabel keeps.
+          # Prometheus keeps targets it discovered while the API cannot be asked, so with every API
+          # server down these scrapes keep failing instead of the targets disappearing.
+          - job_name: "kubernetes-apiservers"
+            scheme: https
+            scrape_interval: 30s
+            scrape_timeout: 10s
+            tls_config:
+              insecure_skip_verify: true
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            kubernetes_sd_configs:
+              - role: endpoints
+                namespaces:
+                  names:
+                    - default
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+                regex: kubernetes;https
+                action: keep
+              - target_label: cluster
+                replacement: dev
+                action: replace
+            metric_relabel_configs:
+              - source_labels: [__name__]
+                regex: ^(apiserver_current_inflight_requests|apiserver_longrunning_requests|process_resident_memory_bytes)$
+                action: keep
+
           - job_name: "kubernetes-core-dns"
             scheme: http
             scrape_interval: 15s
