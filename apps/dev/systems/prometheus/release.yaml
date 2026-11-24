@@ -7,6 +7,17 @@ spec:
   values:
     server:
       replicaCount: 1
+      # Here, under `server`. A block with these limits (512Mi) sat under `serverFiles` until
+      # 2026-11-24, where it renders nothing, so the server ran on base's 254Mi — enough at ~170Mi
+      # until the 2026-11-23 recovery (pod churn) and the API server scrape took it past 254Mi and
+      # into an OOMKilled loop, each restart replaying the WAL for 3+ min. worker2-raspi has 8 GiB.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 768Mi
       image:
         tag: "v3.13.0"
       # The central Prometheus: workload clusters (stg) remote_write into it. The receiver is
@@ -361,10 +372,3 @@ spec:
               - target_label: cluster
                 replacement: dev
                 action: replace
-      resources:
-        requests:
-          cpu: 100m
-          memory: 64Mi
-        limits:
-          cpu: 200m
-          memory: 512Mi
