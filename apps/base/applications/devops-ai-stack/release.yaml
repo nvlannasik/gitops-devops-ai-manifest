@@ -160,6 +160,22 @@ spec:
             # found.
             maxTokens: 16384
             model: gpt-5-nano-2025-08-07
+          - name: nvidia-openrouter
+            kind: openai-compatible
+            baseUrl: "https://openrouter.ai/api/v1"
+            model: nvidia/nemotron-3.5-lightning:free
+            existingSecret: devops-agent-secret
+            apiKeyKey: NVIDIA_OR_KEY
+            # Both heavy backends reason before answering, and max_tokens caps thinking PLUS answer.
+            # At the global 8096, the forced final answer of a long alert investigation ran out
+            # mid-RCA — 4 heavy calls in 14 days (2026-10-21..11-04), each one an RCA posted without
+            # its Ruled Out and Confidence sections. DeepSeek accepts 16384 (checked live 2026-11-04).
+            maxTokens: 128000
+            # USD per 1M tokens — OpenAI's published gpt-5-nano rates (developers.openai.com,
+            # checked 2026-10-08). The dashboard's cost per investigation reads these.
+            priceInput: 0.05
+            priceOutput: 0.4
+            priceCacheRead: 0.005
         routes: {}
         sqs:
           timeoutSeconds: 240

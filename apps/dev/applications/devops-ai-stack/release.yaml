@@ -30,8 +30,8 @@ spec:
 
       llm:
         routes:
-          heavy: [deepseek, chatgpt]
-          light: [private-llm-agus, private-llm-chatgpt]
+          heavy: [nvidia-openrouter]
+          light: [private-llm-agus, nvidia-openrouter]
 
       env:
         NODE_ENV: "dev"
