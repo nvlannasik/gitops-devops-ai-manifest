@@ -170,7 +170,7 @@ spec:
             # At the global 8096, the forced final answer of a long alert investigation ran out
             # mid-RCA — 4 heavy calls in 14 days (2026-10-21..11-04), each one an RCA posted without
             # its Ruled Out and Confidence sections. DeepSeek accepts 16384 (checked live 2026-11-04).
-            maxTokens: 128000
+            maxTokens: 16384
             # USD per 1M tokens — OpenAI's published gpt-5-nano rates (developers.openai.com,
             # checked 2026-10-08). The dashboard's cost per investigation reads these.
             priceInput: 0.05
@@ -331,22 +331,22 @@ spec:
 
     devops-llm-worker:
       enabled: true
-      requestQueue: "private-llm-chatgpt-request.fifo"
+      requestQueue: "private-llm-request.fifo"
       image:
         registry: docker.io
         repository: nvlannasik/llm-worker
         pullPolicy: Always
 
-      llm:
-        apiFormat: "openai"
-        baseUrl: "https://api.openai.com/v1"
-        model: "gpt-5-nano-2025-08-07"
-        maxTokens: 16384
-        useMaxCompletionTokens: true
-        existingSecret: llm-api-key-secret
-        apiKeyKey: api-key
-        sampling:
-          reasoningEffort: high
+      llm: {}
+        # apiFormat: "openai"
+        # baseUrl: "https://api.openai.com/v1"
+        # model: "gpt-5-nano-2025-08-07"
+        # maxTokens: 16384
+        # useMaxCompletionTokens: true
+        # existingSecret: llm-api-key-secret
+        # apiKeyKey: api-key
+        # sampling:
+        #   reasoningEffort: high
       sqs:
         pollWaitSeconds: 20
         maxMessages: 10
