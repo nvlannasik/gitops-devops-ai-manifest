@@ -330,7 +330,7 @@ spec:
           memory: 256Mi
 
     devops-llm-worker:
-      enabled: true
+      enabled: false
       requestQueue: "private-llm-request.fifo"
       image:
         registry: docker.io
