@@ -13,7 +13,8 @@ spec:
         kind: HelmRepository
         name: github
         namespace: flux-system
-      version: "0.8.2"
+      # 0.8.3: an externalWorker private-llm backend no longer requires the in-release worker
+      version: "0.8.3"
   interval: 1m
   install:
     remediation:
@@ -184,8 +185,12 @@ spec:
       investigation:
         maxConcurrent: 5
 
+      # Off since 2026-11-27, with devops-llm-worker: the worker is the only side holding the
+      # GitHub token, so GitOps PR remediation goes with it. A proposal for a Flux-managed
+      # workload is refused ("GitOps PR remediation is not enabled") instead of carded, and the
+      # change timeline has no git commits. Turn both back on together.
       gitops:
-        enabled: true
+        enabled: false
         timeoutSeconds: 240
 
       database:

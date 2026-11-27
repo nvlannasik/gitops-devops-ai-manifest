@@ -14,6 +14,10 @@ spec:
         endpoint: "http://jaeger.monitoring.svc.cluster.local:4318"
 
     devops-ai-agent:
+      # Kept at 0 by the owner since 2026-11-24 (Slack bot off). In values rather than a manual
+      # scale, so a reinstall does not bring it back: drift detection ignores /spec/replicas,
+      # and the 2026-11-27 reinstall would otherwise have started it at the chart's 1.
+      replicaCount: 0
       image:
         tag: latest
 
