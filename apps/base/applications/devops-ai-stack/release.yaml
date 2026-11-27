@@ -331,7 +331,7 @@ spec:
 
     devops-llm-worker:
       enabled: true
-      requestQueue: "private-llm-request.fifo"
+      requestQueue: "private-llm-agus-request.fifo"
       image:
         registry: docker.io
         repository: nvlannasik/llm-worker
