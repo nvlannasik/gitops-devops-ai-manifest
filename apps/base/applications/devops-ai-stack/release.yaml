@@ -104,39 +104,39 @@ spec:
       llm:
         provider: "router"
         backends:
-          - name: chatgpt
-            kind: openai-compatible
-            baseUrl: "https://api.openai.com/v1"
-            model: gpt-5-nano-2025-08-07
-            existingSecret: devops-agent-secret
-            apiKeyKey: OPENAI_KEY
-            # Both heavy backends reason before answering, and max_tokens caps thinking PLUS answer.
-            # At the global 8096, the forced final answer of a long alert investigation ran out
-            # mid-RCA — 4 heavy calls in 14 days (2026-10-21..11-04), each one an RCA posted without
-            # its Ruled Out and Confidence sections. DeepSeek accepts 16384 (checked live 2026-11-04).
-            maxTokens: 16384
-            # USD per 1M tokens — OpenAI's published gpt-5-nano rates (developers.openai.com,
-            # checked 2026-10-08). The dashboard's cost per investigation reads these.
-            priceInput: 0.05
-            priceOutput: 0.4
-            priceCacheRead: 0.005
-          - name: deepseek
-            kind: openai-compatible
-            baseUrl: "https://api.deepseek.com"
-            model: deepseek-v4-flash
-            existingSecret: devops-agent-secret
-            apiKeyKey: DEEPSEEK_KEY
-            # Both heavy backends reason before answering, and max_tokens caps thinking PLUS answer.
-            # At the global 8096, the forced final answer of a long alert investigation ran out
-            # mid-RCA — 4 heavy calls in 14 days (2026-10-21..11-04), each one an RCA posted without
-            # its Ruled Out and Confidence sections. DeepSeek accepts 16384 (checked live 2026-11-04).
-            maxTokens: 16384
-            # USD per 1M tokens — DeepSeek's PEAK rates for deepseek-v4-flash (api-docs.deepseek.com,
-            # checked 2026-10-08). Off-peak is half; one number cannot follow the clock, so this is
-            # the upper bound and the dashboard never shows less than was spent.
-            priceInput: 0.3
-            priceOutput: 1.2
-            priceCacheRead: 0.006
+          # - name: chatgpt
+          #   kind: openai-compatible
+          #   baseUrl: "https://api.openai.com/v1"
+          #   model: gpt-5-nano-2025-08-07
+          #   existingSecret: devops-agent-secret
+          #   apiKeyKey: OPENAI_KEY
+          #   # Both heavy backends reason before answering, and max_tokens caps thinking PLUS answer.
+          #   # At the global 8096, the forced final answer of a long alert investigation ran out
+          #   # mid-RCA — 4 heavy calls in 14 days (2026-10-21..11-04), each one an RCA posted without
+          #   # its Ruled Out and Confidence sections. DeepSeek accepts 16384 (checked live 2026-11-04).
+          #   maxTokens: 16384
+          #   # USD per 1M tokens — OpenAI's published gpt-5-nano rates (developers.openai.com,
+          #   # checked 2026-10-08). The dashboard's cost per investigation reads these.
+          #   priceInput: 0.05
+          #   priceOutput: 0.4
+          #   priceCacheRead: 0.005
+          # - name: deepseek
+          #   kind: openai-compatible
+          #   baseUrl: "https://api.deepseek.com"
+          #   model: deepseek-v4-flash
+          #   existingSecret: devops-agent-secret
+          #   apiKeyKey: DEEPSEEK_KEY
+          #   # Both heavy backends reason before answering, and max_tokens caps thinking PLUS answer.
+          #   # At the global 8096, the forced final answer of a long alert investigation ran out
+          #   # mid-RCA — 4 heavy calls in 14 days (2026-10-21..11-04), each one an RCA posted without
+          #   # its Ruled Out and Confidence sections. DeepSeek accepts 16384 (checked live 2026-11-04).
+          #   maxTokens: 16384
+          #   # USD per 1M tokens — DeepSeek's PEAK rates for deepseek-v4-flash (api-docs.deepseek.com,
+          #   # checked 2026-10-08). Off-peak is half; one number cannot follow the clock, so this is
+          #   # the upper bound and the dashboard never shows less than was spent.
+          #   priceInput: 0.3
+          #   priceOutput: 1.2
+          #   priceCacheRead: 0.006
           - name: private-llm-agus
             kind: private-llm
             requestQueue: "private-llm-request.fifo"
@@ -144,22 +144,22 @@ spec:
             contextTokens: 128000
             maxTokens: 32000
             model: agus
-          - name: private-llm-chatgpt
-            kind: private-llm
-            requestQueue: "private-llm-chatgpt-request.fifo"
-            # Same model as chatgpt (gpt-5-nano via llm-worker), so the same published rates.
-            priceInput: 0.05
-            priceOutput: 0.4
-            priceCacheRead: 0.005
-            contextTokens: 128000
-            # Must equal devops-llm-worker.llm.maxTokens below. The agent sends no ceiling over
-            # SQS — the worker holds its own — so this value only reserves reply window. Left at
-            # the chart default of 8096 while the worker emits up to 16384, replies past 8096
-            # were silently truncated: nothing errors, because the reserve is a promise the agent
-            # makes to itself. The chart refuses to render on the mismatch, which is how this was
-            # found.
-            maxTokens: 16384
-            model: gpt-5-nano-2025-08-07
+          # - name: private-llm-chatgpt
+          #   kind: private-llm
+          #   requestQueue: "private-llm-chatgpt-request.fifo"
+          #   # Same model as chatgpt (gpt-5-nano via llm-worker), so the same published rates.
+          #   priceInput: 0.05
+          #   priceOutput: 0.4
+          #   priceCacheRead: 0.005
+          #   contextTokens: 128000
+          #   # Must equal devops-llm-worker.llm.maxTokens below. The agent sends no ceiling over
+          #   # SQS — the worker holds its own — so this value only reserves reply window. Left at
+          #   # the chart default of 8096 while the worker emits up to 16384, replies past 8096
+          #   # were silently truncated: nothing errors, because the reserve is a promise the agent
+          #   # makes to itself. The chart refuses to render on the mismatch, which is how this was
+          #   # found.
+          #   maxTokens: 16384
+          #   model: gpt-5-nano-2025-08-07
           - name: nvidia-openrouter
             kind: openai-compatible
             baseUrl: "https://openrouter.ai/api/v1"
